@@ -1,5 +1,5 @@
 function CatalogPage() {
-  return <h1>Catalog Page</h1>;
+  return <div>Catalog Page</div>;
 }
 
 export default CatalogPage;
