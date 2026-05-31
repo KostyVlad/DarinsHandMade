@@ -7,7 +7,7 @@ function Header() {
   return (
     <header className="w-full h-[90px] bg-black flex items-center justify-center">
       <nav className="w-full max-w-[1512px] px-[42px] flex items-center justify-between">
-        <NavLink to="/" end className={baseClass}>
+        <NavLink to="/beaded-bags" className={baseClass}>
           BEADED BAGS
         </NavLink>
 
@@ -15,7 +15,7 @@ function Header() {
           ABOUT
         </NavLink>
 
-        <NavLink to="/catalog" className={baseClass}>
+        <NavLink to="/bracelets" className={baseClass}>
           BRACELETS
         </NavLink>
 
@@ -23,7 +23,7 @@ function Header() {
           HOME
         </NavLink>
 
-        <NavLink to="/catalog" className={baseClass}>
+        <NavLink to="/crochet-wear" className={baseClass}>
           CROCHET
         </NavLink>
 

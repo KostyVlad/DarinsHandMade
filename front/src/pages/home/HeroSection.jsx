@@ -3,7 +3,7 @@ import pinkBag from "./assets/pinkBag.png";
 import binIcon from "./assets/Bin.svg";
 
 
-function HeroSection() {
+function HeroSection({ onShopClick }) {
     return (
         <section className="w-full bg-[#f3f3f1]">
             <div className="w-full max-w-[1512px] mx-auto px-[36px] pt-[32px] pb-[40px] flex justify-between gap-[30px]">
@@ -25,34 +25,16 @@ function HeroSection() {
                         <div className="w-[185px] h-[5px] bg-black mt-[10px]"></div>
                     </div>
 
-                    <Link
-                        to="/catalog"
-                        className="inline-flex w-[330px] h-[76px] mt-[54px] ml-[250px] items-center justify-center rounded-full bg-[#140000] text-white text-[34px] tracking-[0.18em] no-underline cursor-pointer"
-                    >
-                        CATALOG
-                    </Link>
-                </div>
-
-                <div className="w-[42%] relative flex justify-center items-start min-h-[580px]">
                     <button
                         type="button"
-                        aria-label="Cart"
-                        className="absolute top-[10px] right-[8px] cursor-pointer"
-                        style={{ all: "unset", position: "absolute", top: "10px", right: "8px", cursor: "pointer" }}
+                        onClick={onShopClick}
+                        className="inline-flex w-[330px] h-[76px] mt-[54px] ml-[250px] items-center justify-center rounded-full bg-[#140000] text-white text-[34px] tracking-[0.18em] no-underline cursor-pointer border-none"
                     >
-                        <img
-                            src={binIcon}
-                            alt="Cart"
-                            className="block w-[28px] h-[28px]"
-                        />
+                        SHOP
                     </button>
+                </div>
 
-
-
-
-
-
-
+                <div className="w-[42%] flex items-center justify-center">
                     <img
                         src={pinkBag}
                         alt="Pink handmade bag"

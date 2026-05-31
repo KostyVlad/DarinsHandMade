@@ -1,7 +1,9 @@
 .header {
-  width: 100%;
-  background-color: #000;
-  border-bottom: 1px solid #1a1a1a;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
 }
 
 .header__nav {
