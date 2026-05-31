@@ -1,0 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Dorsa&display=swap");
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #f3f3f1;
+}

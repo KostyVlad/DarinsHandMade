@@ -1,0 +1,22 @@
+.header {
+  width: 100%;
+  background-color: #000;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.header__nav {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 33px 40px 31px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header__link {
+  color: #f5f1eb;
+  text-decoration: none;
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
