@@ -2,7 +2,7 @@ import aboutBag from "./assets/AboutSectionBag.png";
 
 function AboutSection() {
   return (
-    <section className="w-full bg-[#f3f3f1]">
+    <section className="w-full bg-[#f3f3f1] -mt-[70px]">
       <div className="mx-auto flex max-w-[1512px] items-center justify-between px-[40px] py-[40px]">
         <div className="w-[42%] flex justify-start">
           <img

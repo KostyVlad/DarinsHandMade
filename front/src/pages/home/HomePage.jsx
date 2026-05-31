@@ -1,6 +1,7 @@
 import Header from "../../shared/ui/Header";
 import HeroSection from "./HeroSection";
 import AboutSection from "./AboutSection";
+import CustomBagSection from "./CustomBagSection";
 import "./HomePage.css";
 
 function HomePage() {
@@ -9,6 +10,7 @@ function HomePage() {
       <Header />
       <HeroSection />
       <AboutSection />
+      <CustomBagSection />
     </div>
   );
 }
