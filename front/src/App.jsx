@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./shared/ui/Header";
 import Footer from "./shared/ui/Footer";
+import LoginPage from "./pages/login/LoginPage";
+import CartPage from "./pages/cart/CartPage";
 
 import HomePage from "./pages/home/HomePage";
 import AboutPage from "./pages/about/AboutPage";
@@ -22,6 +24,8 @@ function App() {
           <Route path="/bracelets" element={<BraceletsPage />} />
           <Route path="/embroidery" element={<EmbroideryPage />} />
           <Route path="/custom-studio" element={<CustomStudioPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/cart" element={<CartPage />} />
         </Routes>
       </div>
       <Footer />
