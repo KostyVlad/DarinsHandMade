@@ -24,7 +24,7 @@ function Header() {
         </NavLink>
 
         <NavLink to="/crochet-wear" className={baseClass}>
-          CROCHET
+          EMBROIDERY
         </NavLink>
 
         <NavLink to="/custom-studio" className={baseClass}>

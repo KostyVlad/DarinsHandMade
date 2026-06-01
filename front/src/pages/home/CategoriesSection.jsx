@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import rectangleWithBag from "./assets/RectangleWithbag.png";
 import rectangleBracelets from "./assets/RectangleBracelets.png";
-import rectangleCroachetWear from "./assets/RectangleCroachetWear.png";
+import Embroidery from "./assets/Embroidery.jpg";
 
 function CategoriesSection({ categoriesRef }) {
     const categories = [
@@ -16,8 +16,8 @@ function CategoriesSection({ categoriesRef }) {
             link: "/bracelets",
         },
         {
-            title: "Crochet Wear",
-            image: rectangleCroachetWear,
+            title: "Embroidery",
+            image: Embroidery,
             link: "/crochet-wear",
         },
     ];

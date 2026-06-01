@@ -3,7 +3,6 @@ import HeroSection from "./HeroSection";
 import AboutSection from "./AboutSection";
 import CustomBagSection from "./CustomBagSection";
 import CategoriesSection from "./CategoriesSection";
-import "./HomePage.css";
 
 function HomePage() {
     const categoriesRef = useRef(null);
