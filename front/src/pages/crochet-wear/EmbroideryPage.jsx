@@ -1,9 +1,9 @@
-function CrochetWearPage() {
+function EmbroideryPage() {
     return (
         <div className="min-h-screen bg-black px-[40px] py-[60px] text-white">
-            <h1>Crochet Wear Page</h1>
+            <h1>Embroidery Page</h1>
         </div>
     );
 }
 
-export default CrochetWearPage;
+export default EmbroideryPage;
