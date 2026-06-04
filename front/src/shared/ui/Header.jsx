@@ -33,14 +33,16 @@ function Header() {
           CUSTOM STUDIO
         </NavLink>
       </nav>
+
+
       <div className="flex items-center gap-3 md:gap-4 lg:gap-5">
         <NavLink
           to="/login"
           className="flex items-center gap-2 text-[#f5efe8] no-underline transition-opacity duration-300 hover:opacity-70"
           style={{ fontFamily: "Centaur, serif" }}
         >
-          <User size={18} strokeWidth={1.75} />
-          <span className="hidden sm:inline text-[16px] tracking-[2px] leading-none">
+          <User size={30} strokeWidth={1.75} />
+          <span className="hidden sm:inline text-[20px] tracking-[2px] leading-none">
             Login
           </span>
         </NavLink>
@@ -51,13 +53,13 @@ function Header() {
           style={{ fontFamily: "Centaur, serif" }}
         >
           <div className="relative">
-            <ShoppingBag size={18} strokeWidth={1.75} />
+            <ShoppingBag size={30} strokeWidth={1.75} />
             <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5efe8] px-[4px] text-[10px] text-black leading-none">
               0
             </span>
           </div>
 
-          <span className="hidden sm:inline text-[16px] tracking-[2px] leading-none">
+          <span className="hidden sm:inline text-[20px] tracking-[2px] leading-none">
             Cart
           </span>
         </NavLink>

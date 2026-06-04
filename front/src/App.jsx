@@ -11,6 +11,7 @@ import BraceletsPage from "./pages/bracelets/BraceletsPage";
 import EmbroideryPage from "./pages/crochet-wear/EmbroideryPage";
 import CustomStudioPage from "./pages/custom-studio/CustomStudioPage";
 
+
 function App() {
   return (
     <BrowserRouter>

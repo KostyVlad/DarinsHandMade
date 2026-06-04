@@ -1,0 +1,141 @@
+[
+    {
+        "file_name": "image.png",
+        "model_name": "Pink Beaded Mini Bag",
+        "category": "bags",
+        "color_palette": [
+            "Pink",
+            "White"
+        ],
+        "details": [
+            "Pearl handle",
+            "Ribbon bow details",
+            "DARIN'S logo plate"
+        ],
+        "style": [
+            "Glamorous",
+            "Romantic"
+        ]
+    },
+    {
+        "file_name": "image_2.png",
+        "model_name": "Iridescent Black Beaded Bag",
+        "category": "bags",
+        "color_palette": [
+            "Black",
+            "Multi-color iridescent"
+        ],
+        "details": [
+            "Beaded shoulder strap",
+            "DARIN'S tag"
+        ],
+        "style": [
+            "Edgy",
+            "Night-out"
+        ]
+    },
+    {
+        "file_name": "image_3.png",
+        "model_name": "Clear Crystal Beaded Bag",
+        "category": "bags",
+        "color_palette": [
+            "Clear/Transparent"
+        ],
+        "details": [
+            "Metal clasp closure",
+            "Beaded strap",
+            "High-shine finish"
+        ],
+        "style": [
+            "Minimalist",
+            "Elegant"
+        ]
+    },
+    {
+        "file_name": "image_4.png",
+        "model_name": "Blue Beaded Classic Bag",
+        "category": "bags",
+        "color_palette": [
+            "Blue"
+        ],
+        "details": [
+            "Beaded handle",
+            "DARIN'S logo plate"
+        ],
+        "style": [
+            "Vibrant",
+            "Chic"
+        ]
+    },
+    {
+        "file_name": "bracelet_1.png",
+        "model_name": "Pearl Charm Bracelet",
+        "category": "bracelets",
+        "color_palette": [
+            "White",
+            "Pearl"
+        ],
+        "details": [
+            "Handmade",
+            "Charm accent",
+            "Adjustable fit"
+        ],
+        "style": [
+            "Elegant",
+            "Soft"
+        ]
+    },
+    {
+        "file_name": "bracelet_2.png",
+        "model_name": "Blue Beaded Bracelet",
+        "category": "bracelets",
+        "color_palette": [
+            "Blue",
+            "Silver"
+        ],
+        "details": [
+            "Handmade",
+            "Beaded design",
+            "Lightweight"
+        ],
+        "style": [
+            "Chic",
+            "Minimal"
+        ]
+    },
+    {
+        "file_name": "bracelet_3.png",
+        "model_name": "Pink Crystal Bracelet",
+        "category": "bracelets",
+        "color_palette": [
+            "Pink",
+            "Clear"
+        ],
+        "details": [
+            "Handmade",
+            "Crystal beads",
+            "Flexible cord"
+        ],
+        "style": [
+            "Romantic",
+            "Glamorous"
+        ]
+    },
+    {
+        "file_name": "bracelet_4.png",
+        "model_name": "Black Statement Bracelet",
+        "category": "bracelets",
+        "color_palette": [
+            "Black"
+        ],
+        "details": [
+            "Handmade",
+            "Statement piece",
+            "Secure clasp"
+        ],
+        "style": [
+            "Edgy",
+            "Night-out"
+        ]
+    }
+]
