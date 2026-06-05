@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import bgImage from "./BACKGROUDN.png";
 
 export default function AboutPage() {
   const [beads, setBeads] = useState([]);
 
   useEffect(() => {
     const colors = ["#FFFFFF", "#F5EFE8", "#E5D9C5", "#FFC0CB", "#A9A9A9", "#050000"];
-
+    
     const newBeads = Array.from({ length: 40 }).map((_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -14,12 +15,15 @@ export default function AboutPage() {
       size: Math.random() * 12 + 6,
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
-
+    
     setBeads(newBeads);
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#f3f3f1] overflow-hidden flex items-center justify-center py-20 px-4 md:px-8">
+    <div 
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat overflow-hidden flex items-center justify-center py-20 px-4 md:px-8"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
       <style>
         {`
           @keyframes fall {
@@ -32,7 +36,7 @@ export default function AboutPage() {
             position: absolute;
             top: -20px;
             border-radius: 50%;
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2), 1px 1px 3px rgba(255,255,255,0.9);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5), 1px 1px 3px rgba(255,255,255,0.5);
             animation-name: fall;
             animation-timing-function: linear;
             animation-iteration-count: infinite;
@@ -55,16 +59,16 @@ export default function AboutPage() {
         />
       ))}
 
-      <div className="relative z-10 max-w-[900px] w-full bg-white/70 backdrop-blur-md p-10 md:p-16 border border-black/10 shadow-xl text-center">
-        <h1 className="font-['Dorsa:Regular',sans-serif] text-[100px] md:text-[140px] tracking-[15.12px] leading-none text-black mb-6">
+      <div className="relative z-10 max-w-[900px] w-full bg-black/40 backdrop-blur-md p-10 md:p-16 border border-white/10 shadow-2xl text-center">
+        <h1 className="font-['Dorsa:Regular',sans-serif] text-[100px] md:text-[140px] tracking-[15.12px] leading-none text-white mb-6">
           ABOUT ME
         </h1>
 
-        <h2 className="font-['Perpetua_Titling_MT:Bold',sans-serif] text-[24px] tracking-[4.32px] text-black mb-10">
+        <h2 className="font-['Perpetua_Titling_MT:Bold',sans-serif] text-[24px] tracking-[4.32px] text-white mb-10">
           Hi, I’m Darina!
         </h2>
 
-        <div className="space-y-6 font-['Centaur:Regular',sans-serif] text-[#333] text-[20px] md:text-[24px] tracking-[2.16px] leading-relaxed text-justify md:text-center">
+        <div className="space-y-6 font-['Centaur:Regular',sans-serif] text-[#f5efe8] text-[20px] md:text-[24px] tracking-[2.16px] leading-relaxed text-justify md:text-center">
           <p>
             In a world full of fast fashion and mass-produced accessories, I’ve always found myself looking for something different—something with a soul. That’s why I started creating handmade bags.
           </p>

@@ -9,16 +9,16 @@ function HeroSection({ onShopClick }) {
             <div className="w-full max-w-[1512px] mx-auto px-[36px] pt-[32px] pb-[40px] flex justify-between gap-[30px]">
                 <div className="w-[58%] pt-[44px]">
                     <h1
-                        className="m-0 text-black text-[180px] leading-[0.78] tracking-[0.03em]"
+                        className="m-0 text-black text-[180px] leading-[0.78] tracking-[0.06em]"
                         style={{ fontFamily: "Dorsa, sans-serif" }}
                     >
-                        HANDMADE-IS A FUTURE
+                        EXCLUSIVE HANDMADE
                     </h1>
 
                     <div className="w-full max-w-[790px] h-[7px] bg-black mt-[14px]"></div>
 
                     <div className="w-full max-w-[790px] flex flex-col items-center">
-                        <p className="mt-[14px] mb-0 text-black text-[74px] leading-none">
+                        <p className="mt-[17px] mb-0 text-black text-[74px] leading-none">
                             BY DARIN’S
                         </p>
 

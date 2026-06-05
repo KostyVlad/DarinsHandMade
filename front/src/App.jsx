@@ -27,7 +27,7 @@ function App() {
       <BrowserRouter>
         <Header token={token} setToken={setToken} />
 
-        <div className="pt-[120px]">
+        <div>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />

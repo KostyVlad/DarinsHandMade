@@ -58,9 +58,6 @@ function Footer() {
                         <NavLink to="/about" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
                             About Me
                         </NavLink>
-                        <NavLink to="/contact" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
-                            Contact
-                        </NavLink>
                     </div>
 
                     <div>
@@ -70,13 +67,16 @@ function Footer() {
                         >
                             SOCIALS
                         </h3>
-                        <a href="#" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
+                        <a href="https://www.instagram.com/darins.handmade/" target="_blank" rel="noopener noreferrer" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
                             Instagram
                         </a>
-                        <a href="#" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
-                            Pinterest
+                        <a href="https://www.etsy.com/shop/DarinaArtCraft?ref=dashboard-header" target="_blank" rel="noopener noreferrer" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
+                            Etsy
                         </a>
-                        <a href="#" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
+                        <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
+                            Facebook
+                        </a>
+                        <a href="https://tiktok.com/" target="_blank" rel="noopener noreferrer" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
                             TikTok
                         </a>
                     </div>
