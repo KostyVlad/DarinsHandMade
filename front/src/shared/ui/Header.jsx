@@ -1,8 +1,13 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { ShoppingBag, User, LogOut } from "lucide-react";
+// 1. Импортируем наш контекст корзины
+import { useCart } from "../../context/CartContext";
 
 function Header({ token, setToken }) {
   const navigate = useNavigate();
+
+  // 2. Достаем функцию подсчета товаров из контекста (обязательно внутри компонента!)
+  const { getTotalItems } = useCart();
 
   const baseClass =
     "text-[#f5efe8] no-underline text-[18px] tracking-[0.18em]";
@@ -45,7 +50,7 @@ function Header({ token, setToken }) {
         {token ? (
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-[#f5efe8] no-underline transition-opacity duration-300 hover:opacity-70"
+            className="flex items-center gap-2 text-[#f5efe8] no-underline transition-opacity duration-300 hover:opacity-70 cursor-pointer bg-transparent border-none"
             style={{ fontFamily: "Centaur, serif" }}
           >
             <LogOut size={28} strokeWidth={1.75} />
@@ -73,8 +78,9 @@ function Header({ token, setToken }) {
         >
           <div className="relative">
             <ShoppingBag size={30} strokeWidth={1.75} />
+            {/* 3. Вызываем функцию, чтобы получить актуальную цифру */}
             <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5efe8] px-[4px] text-[10px] text-black leading-none">
-              0
+              {getTotalItems ? getTotalItems() : 0}
             </span>
           </div>
 

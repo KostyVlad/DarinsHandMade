@@ -18,11 +18,11 @@
         ]
     },
     {
-        "file_name": "image_2.png",
+        "file_name": "uploads/bags/grey.jpg",
         "model_name": "Iridescent Black Beaded Bag",
         "category": "bags",
         "color_palette": [
-            "Black",
+            "Grey",
             "Multi-color iridescent"
         ],
         "details": [
@@ -35,11 +35,11 @@
         ]
     },
     {
-        "file_name": "image_3.png",
+        "file_name": "uploads/bags/skyblue.jpg",
         "model_name": "Clear Crystal Beaded Bag",
         "category": "bags",
         "color_palette": [
-            "Clear/Transparent"
+            "Blue"
         ],
         "details": [
             "Metal clasp closure",
@@ -52,7 +52,7 @@
         ]
     },
     {
-        "file_name": "image_4.png",
+        "file_name": "uploads/bags/pink.png",
         "model_name": "Blue Beaded Classic Bag",
         "category": "bags",
         "color_palette": [
@@ -68,7 +68,7 @@
         ]
     },
     {
-        "file_name": "bracelet_1.png",
+        "file_name": "uploads/bracelets/bracelet_1.png",
         "model_name": "Pearl Charm Bracelet",
         "category": "bracelets",
         "color_palette": [
@@ -86,7 +86,7 @@
         ]
     },
     {
-        "file_name": "bracelet_2.png",
+        "file_name": "uploads/bracelets/bracelet_2.png",
         "model_name": "Blue Beaded Bracelet",
         "category": "bracelets",
         "color_palette": [
@@ -104,17 +104,16 @@
         ]
     },
     {
-        "file_name": "bracelet_3.png",
-        "model_name": "Pink Crystal Bracelet",
+        "file_name": "uploads/bracelets/bracelet_4.png",
+        "model_name": "Black Statement Bracelet",
         "category": "bracelets",
         "color_palette": [
-            "Pink",
-            "Clear"
+            "Black"
         ],
         "details": [
             "Handmade",
-            "Crystal beads",
-            "Flexible cord"
+            "Statement piece",
+            "Secure clasp"
         ],
         "style": [
             "Romantic",
@@ -122,7 +121,7 @@
         ]
     },
     {
-        "file_name": "bracelet_4.png",
+        "file_name": "uploads/bracelets/bracelet_4.png",
         "model_name": "Black Statement Bracelet",
         "category": "bracelets",
         "color_palette": [

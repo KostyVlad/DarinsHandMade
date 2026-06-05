@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Product = require('../models/productModel');
-const products = require('./productsData.json'); // ваш JSON
+const products = require('./productsData.json');
 
 dotenv.config();
 
