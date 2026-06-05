@@ -22,7 +22,7 @@ function HeroSection({ onShopClick }) {
                             BY DARIN’S
                         </p>
 
-                        <div className="w-[185px] h-[5px] bg-black mt-[10px]"></div>
+                        <div className="w-[360px] h-[5px] bg-black mt-[10px]"></div>
                     </div>
 
                     <button

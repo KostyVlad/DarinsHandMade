@@ -1,6 +1,24 @@
 [
     {
-        "file_name": "uploads/bags/pink.png",
+        "file_name": "uploads/bags/darkblue.JPG",
+        "model_name": "Dark Blue Beaded Mini Bag",
+        "category": "bags",
+        "color_palette": [
+            "Dark Blue",
+            "White"
+        ],
+        "details": [
+            "Pearl handle",
+            "Ribbon bow details",
+            "DARIN'S logo plate"
+        ],
+        "style": [
+            "Glamorous",
+            "Romantic"
+        ]
+    },
+    {
+        "file_name": "uploads/bags/babepink.JPG",
         "model_name": "Pink Beaded Mini Bag",
         "category": "bags",
         "color_palette": [
@@ -15,23 +33,6 @@
         "style": [
             "Glamorous",
             "Romantic"
-        ]
-    },
-    {
-        "file_name": "uploads/bags/grey.jpg",
-        "model_name": "Iridescent Black Beaded Bag",
-        "category": "bags",
-        "color_palette": [
-            "Grey",
-            "Multi-color iridescent"
-        ],
-        "details": [
-            "Beaded shoulder strap",
-            "DARIN'S tag"
-        ],
-        "style": [
-            "Edgy",
-            "Night-out"
         ]
     },
     {
@@ -52,7 +53,24 @@
         ]
     },
     {
-        "file_name": "uploads/bags/pink.png",
+        "file_name": "uploads/bags/grey.jpg",
+        "model_name": "Iridescent Black Beaded Bag",
+        "category": "bags",
+        "color_palette": [
+            "Grey",
+            "Multi-color iridescent"
+        ],
+        "details": [
+            "Beaded shoulder strap",
+            "DARIN'S tag"
+        ],
+        "style": [
+            "Edgy",
+            "Night-out"
+        ]
+    },
+    {
+        "file_name": "uploads/bags/pink.JPG",
         "model_name": "Blue Beaded Classic Bag",
         "category": "bags",
         "color_palette": [
