@@ -53,6 +53,29 @@
         ]
     },
     {
+        "file_name": "uploads/bags/cristalwhite.jpg",
+        "model_name": "Crystal White Beaded Evening Bag",
+        "category": "bags",
+        "color_palette": [
+            "Crystal Clear",
+            "Iridescent",
+            "White"
+        ],
+        "details": [
+            "Premium metal twist-lock clasp",
+            "Fully beaded body with high-quality crystals",
+            "Detachable beaded shoulder strap",
+            "Luxurious iridescent finish",
+            "Soft inner lining"
+        ],
+        "style": [
+            "Elegant",
+            "Glamorous",
+            "Luxury",
+            "Evening"
+        ]
+    },
+    {
         "file_name": "uploads/bags/grey.jpg",
         "model_name": "Iridescent Black Beaded Bag",
         "category": "bags",

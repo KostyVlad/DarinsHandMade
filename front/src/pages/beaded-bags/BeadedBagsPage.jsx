@@ -72,11 +72,11 @@ export default function BeadedBagsPage() {
 
                 return (
                   <div key={bag._id} className="group">
-                    <div className="aspect-[3/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10">
+                    <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                       <img
                         src={`http://localhost:5000/${bag.file_name.replace(/^\//, '')}`}
                         alt={bag.model_name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                         onError={(e) => {
                           console.error("Image loading error:", e.target.src);
                         }}
@@ -105,8 +105,8 @@ export default function BeadedBagsPage() {
                       <button
                         onClick={() => !isInCart && addToCart(bag)}
                         className={`font-['Perpetua_Titling_MT:Bold',sans-serif] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${isInCart
-                            ? "bg-white text-black border-black/30 cursor-default"
-                            : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
+                          ? "bg-white text-black border-black/30 cursor-default"
+                          : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
                           }`}
                       >
                         {isInCart ? "In Cart" : "Add to Cart"}
