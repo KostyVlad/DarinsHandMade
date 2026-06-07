@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-// Исправлен путь к контексту (поднимаемся на две папки вверх)
 import { useCart } from "../../context/CartContext";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
@@ -39,14 +38,14 @@ export default function CartPage() {
         </p>
 
         <div className="grid lg:grid-cols-3 gap-12">
-          {/* Cart Items */}
+
           <div className="lg:col-span-2 space-y-6">
             {items.map((item) => (
               <div
                 key={item.id}
                 className="border border-black/10 p-6 flex gap-6 hover:border-black/30 transition-colors"
               >
-                {/* Product Image */}
+
                 <div className="w-32 h-32 bg-[#fafafa] flex-shrink-0 overflow-hidden">
                   <img
                     src={item.image}
@@ -58,7 +57,7 @@ export default function CartPage() {
                   />
                 </div>
 
-                {/* Product Details */}
+
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <p className="font-['Perpetua_Titling_MT:Bold',sans-serif] text-[12px] tracking-[2.16px] text-[#666] mb-2 uppercase">
@@ -72,7 +71,7 @@ export default function CartPage() {
                     </p>
                   </div>
 
-                  {/* Quantity Controls */}
+                 
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-3 border border-black/20 rounded-full">
                       <button
@@ -104,7 +103,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Item Total */}
+
                 <div className="flex flex-col justify-between items-end">
                   <p className="font-['Dorsa:Regular',sans-serif] text-[36px] tracking-[6.48px] text-black m-0">
                     ${(item.price * item.quantity).toFixed(2)}
@@ -113,7 +112,7 @@ export default function CartPage() {
               </div>
             ))}
 
-            {/* Clear Cart Button */}
+
             <button
               onClick={clearCart}
               className="font-['Centaur:Regular',sans-serif] text-[16px] tracking-[2.88px] text-red-600 hover:text-red-700 underline transition-colors cursor-pointer bg-transparent border-none p-0 mt-4"
@@ -122,7 +121,7 @@ export default function CartPage() {
             </button>
           </div>
 
-          {/* Order Summary */}
+          
           <div className="lg:col-span-1">
             <div className="border border-black/20 p-8 sticky top-8">
               <h2 className="font-['Dorsa:Regular',sans-serif] text-[48px] tracking-[8.64px] leading-none text-black mb-8 text-center m-0">

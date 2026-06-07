@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function LoginPage({ setToken }) {
-  // Состояния из логики и дизайна
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,10 +11,10 @@ export default function LoginPage({ setToken }) {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Функция отправки из первого кода
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(""); // очищаем ошибку перед новым запросом
+    setMessage("");
 
     const url = isLogin
       ? "http://localhost:5000/api/auth/signin"
@@ -43,7 +43,7 @@ export default function LoginPage({ setToken }) {
     }
   };
 
-  // Функция для переключения вкладок с очисткой ошибок
+
   const toggleLoginMode = (mode) => {
     setIsLogin(mode);
     setMessage("");
@@ -77,25 +77,8 @@ export default function LoginPage({ setToken }) {
             Handmade is a future. Each piece crafted with love and dedication.
           </p>
 
-          {/* Decorative dots */}
-          <div className="flex justify-center gap-3 mt-12">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
-            <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          </div>
         </div>
 
-        {/* Bottom category links */}
-        <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-8">
-          {["bracelets", "beaded bags", "embroidery"].map((cat) => (
-            <span
-              key={cat}
-              className="font-['Perpetua_Titling_MT:Bold',sans-serif] text-white/30 text-[11px] tracking-[2.5px] uppercase"
-            >
-              {cat}
-            </span>
-          ))}
-        </div>
       </div>
 
       {/* Right form panel */}
@@ -123,22 +106,20 @@ export default function LoginPage({ setToken }) {
             <button
               type="button"
               onClick={() => toggleLoginMode(true)}
-              className={`flex-1 pb-4 font-['Perpetua_Titling_MT:Bold',sans-serif] text-[13px] tracking-[3px] uppercase transition-all ${
-                isLogin
-                  ? "text-black border-b-2 border-black -mb-px"
-                  : "text-black/30 hover:text-black/60"
-              }`}
+              className={`flex-1 pb-4 font-['Perpetua_Titling_MT:Bold',sans-serif] text-[13px] tracking-[3px] uppercase transition-all ${isLogin
+                ? "text-black border-b-2 border-black -mb-px"
+                : "text-black/30 hover:text-black/60"
+                }`}
             >
               Sign In
             </button>
             <button
               type="button"
               onClick={() => toggleLoginMode(false)}
-              className={`flex-1 pb-4 font-['Perpetua_Titling_MT:Bold',sans-serif] text-[13px] tracking-[3px] uppercase transition-all ${
-                !isLogin
-                  ? "text-black border-b-2 border-black -mb-px"
-                  : "text-black/30 hover:text-black/60"
-              }`}
+              className={`flex-1 pb-4 font-['Perpetua_Titling_MT:Bold',sans-serif] text-[13px] tracking-[3px] uppercase transition-all ${!isLogin
+                ? "text-black border-b-2 border-black -mb-px"
+                : "text-black/30 hover:text-black/60"
+                }`}
             >
               Create Account
             </button>
@@ -251,7 +232,6 @@ export default function LoginPage({ setToken }) {
               </div>
             )}
 
-            {/* Вывод ошибки сервера */}
             {message && (
               <div className="text-red-500 font-['Centaur:Regular',sans-serif] text-[15px] tracking-[1px]">
                 {message}
@@ -268,7 +248,7 @@ export default function LoginPage({ setToken }) {
             </div>
           </form>
 
-          {/* Divider */}
+
           <div className="flex items-center gap-4 my-8">
             <div className="flex-1 h-px bg-black/10" />
             <span className="font-['Centaur:Regular',sans-serif] text-[12px] tracking-[2px] text-black/30">
@@ -277,7 +257,7 @@ export default function LoginPage({ setToken }) {
             <div className="flex-1 h-px bg-black/10" />
           </div>
 
-          {/* Social */}
+
           <div className="space-y-3">
             <button className="w-full border border-black/15 py-3.5 font-['Centaur:Regular',sans-serif] text-[14px] tracking-[2px] text-black/60 hover:border-black/40 hover:text-black transition-all flex items-center justify-center gap-3">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -290,7 +270,7 @@ export default function LoginPage({ setToken }) {
             </button>
           </div>
 
-          {/* Toggle link */}
+
           <p className="text-center mt-10 font-['Centaur:Regular',sans-serif] text-[14px] tracking-[2px] text-black/40">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button

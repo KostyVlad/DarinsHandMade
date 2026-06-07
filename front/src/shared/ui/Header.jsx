@@ -1,12 +1,11 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { ShoppingBag, User, LogOut } from "lucide-react";
-// 1. Импортируем наш контекст корзины
 import { useCart } from "../../context/CartContext";
 
 function Header({ token, setToken }) {
   const navigate = useNavigate();
 
-  // 2. Достаем функцию подсчета товаров из контекста (обязательно внутри компонента!)
+  
   const { getTotalItems } = useCart();
 
   const baseClass =
@@ -78,7 +77,7 @@ function Header({ token, setToken }) {
         >
           <div className="relative">
             <ShoppingBag size={30} strokeWidth={1.75} />
-            {/* 3. Вызываем функцию, чтобы получить актуальную цифру */}
+            
             <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5efe8] px-[4px] text-[10px] text-black leading-none">
               {getTotalItems ? getTotalItems() : 0}
             </span>
