@@ -93,8 +93,12 @@ export function CartProvider({ children, token }) {
         return items.reduce((total, item) => total + item.quantity, 0);
     };
 
+    const addCustomItem = (item) => {
+        setItems((prev) => [...prev, item]);
+    };
+
     return (
-        <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, getTotalPrice, clearCart, getTotalItems }}>
+        <CartContext.Provider value={{ items, addToCart, addCustomItem, removeFromCart, updateQuantity, getTotalPrice, clearCart, getTotalItems }}>
             {children}
         </CartContext.Provider>
     );

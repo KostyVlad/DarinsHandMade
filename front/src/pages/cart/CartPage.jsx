@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const navigate = useNavigate();
 
   if (items.length === 0) {
     return (
@@ -145,7 +146,10 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button className="w-full bg-black text-white font-['Perpetua_Titling_MT:Bold',sans-serif] text-[16px] tracking-[2.88px] py-4 rounded-full hover:bg-black/80 transition-colors mb-4 cursor-pointer border-none">
+              <button
+                onClick={() => navigate("/checkout")}
+                className="w-full bg-black text-white font-['Perpetua_Titling_MT:Bold',sans-serif] text-[16px] tracking-[2.88px] py-4 rounded-full hover:bg-black/80 transition-colors mb-4 cursor-pointer border-none"
+              >
                 Checkout
               </button>
 

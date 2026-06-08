@@ -52,7 +52,7 @@ const removeFromCart = async (req, res) => {
         let cart = await Cart.findOne({ user: req.user.id });
 
         if (!cart) {
-            return res.status(404).json({ success: false, msg: 'Корзина не найдена' });
+            return res.status(404).json({ success: false, msg: 'Cart not found' });
         }
 
         cart.items = cart.items.filter(

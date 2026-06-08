@@ -8,10 +8,11 @@ import HomePage from "./pages/home/HomePage";
 import AboutPage from "./pages/about/AboutPage";
 import BeadedBagsPage from "./pages/beaded-bags/BeadedBagsPage";
 import BraceletsPage from "./pages/bracelets/BraceletsPage";
-import EmbroideryPage from "./pages/embroidery/EmbroideryPage";
 import CustomStudioPage from "./pages/custom-studio/CustomStudioPage";
 import LoginPage from "./pages/login/LoginPage";
 import CartPage from "./pages/cart/CartPage";
+import ProductDetailPage from "./pages/product/ProductDetailPage";
+import CheckoutPage from "./pages/checkout/CheckoutPage";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -33,10 +34,12 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/beaded-bags" element={<BeadedBagsPage />} />
             <Route path="/bracelets" element={<BraceletsPage />} />
-            <Route path="/embroidery" element={<EmbroideryPage />} />
+
             <Route path="/custom-studio" element={<CustomStudioPage />} />
             <Route path="/login" element={<LoginPage setToken={setToken} />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
           </Routes>
         </div>
 

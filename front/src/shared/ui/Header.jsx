@@ -5,7 +5,7 @@ import { useCart } from "../../context/CartContext";
 function Header({ token, setToken }) {
   const navigate = useNavigate();
 
-  
+
   const { getTotalItems } = useCart();
 
   const baseClass =
@@ -27,18 +27,14 @@ function Header({ token, setToken }) {
         <NavLink to="/about" className={baseClass}>
           ABOUT
         </NavLink>
-
+        <NavLink to="/" end className={baseClass}>
+          HOME
+        </NavLink>
         <NavLink to="/bracelets" className={baseClass}>
           BRACELETS
         </NavLink>
 
-        <NavLink to="/" end className={baseClass}>
-          HOME
-        </NavLink>
 
-        <NavLink to="/embroidery" className={baseClass}>
-          EMBROIDERY
-        </NavLink>
 
         <NavLink to="/custom-studio" className={baseClass}>
           CUSTOM STUDIO
@@ -77,7 +73,7 @@ function Header({ token, setToken }) {
         >
           <div className="relative">
             <ShoppingBag size={30} strokeWidth={1.75} />
-            
+
             <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#f5efe8] px-[4px] text-[10px] text-black leading-none">
               {getTotalItems ? getTotalItems() : 0}
             </span>

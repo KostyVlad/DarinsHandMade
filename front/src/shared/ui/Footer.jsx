@@ -40,9 +40,6 @@ function Footer() {
                         <NavLink to="/bracelets" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
                             Bracelets
                         </NavLink>
-                        <NavLink to="/embroidery" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
-                            Embroidery
-                        </NavLink>
                         <NavLink to="/custom-studio" className={footerLinkClass} style={{ fontFamily: "Centaur, serif" }}>
                             Custom Studio
                         </NavLink>

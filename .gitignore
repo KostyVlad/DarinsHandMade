@@ -1,6 +1,4 @@
 node_modules/
 .env
 .planning/
-.planning/
 .claude/
-.env
