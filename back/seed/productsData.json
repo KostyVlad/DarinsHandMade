@@ -3,179 +3,90 @@
         "file_name": "uploads/bags/darkblue.JPG",
         "model_name": "Dark Blue Beaded Mini Bag",
         "category": "bags",
-        "color_palette": [
-            "Dark Blue",
-            "White"
-        ],
-        "details": [
-            "Pearl handle",
-            "Ribbon bow details",
-            "DARIN'S logo plate"
-        ],
-        "style": [
-            "Glamorous",
-            "Romantic"
-        ]
+        "color_palette": ["Dark Blue", "White"],
+        "details": ["Pearl handle", "Ribbon bow details", "DARIN'S logo plate"],
+        "style": ["Glamorous", "Romantic"],
+        "price": 120
     },
     {
         "file_name": "uploads/bags/babepink.JPG",
         "model_name": "Pink Beaded Mini Bag",
         "category": "bags",
-        "color_palette": [
-            "Pink",
-            "White"
-        ],
-        "details": [
-            "Pearl handle",
-            "Ribbon bow details",
-            "DARIN'S logo plate"
-        ],
-        "style": [
-            "Glamorous",
-            "Romantic"
-        ]
+        "color_palette": ["Pink", "White"],
+        "details": ["Pearl handle", "Ribbon bow details", "DARIN'S logo plate"],
+        "style": ["Glamorous", "Romantic"],
+        "price": 120
     },
     {
         "file_name": "uploads/bags/skyblue.jpg",
         "model_name": "Clear Crystal Beaded Bag",
         "category": "bags",
-        "color_palette": [
-            "Blue"
-        ],
-        "details": [
-            "Metal clasp closure",
-            "Beaded strap",
-            "High-shine finish"
-        ],
-        "style": [
-            "Minimalist",
-            "Elegant"
-        ]
+        "color_palette": ["Blue"],
+        "details": ["Metal clasp closure", "Beaded strap", "High-shine finish"],
+        "style": ["Minimalist", "Elegant"],
+        "price": 140
     },
     {
         "file_name": "uploads/bags/cristalwhite.jpg",
         "model_name": "Crystal White Beaded Evening Bag",
         "category": "bags",
-        "color_palette": [
-            "Crystal Clear",
-            "Iridescent",
-            "White"
-        ],
-        "details": [
-            "Premium metal twist-lock clasp",
-            "Fully beaded body with high-quality crystals",
-            "Detachable beaded shoulder strap",
-            "Luxurious iridescent finish",
-            "Soft inner lining"
-        ],
-        "style": [
-            "Elegant",
-            "Glamorous",
-            "Luxury",
-            "Evening"
-        ]
+        "color_palette": ["Crystal Clear", "Iridescent", "White"],
+        "details": ["Premium metal twist-lock clasp", "Fully beaded body", "Detachable shoulder strap"],
+        "style": ["Elegant", "Glamorous", "Luxury", "Evening"],
+        "price": 160
     },
     {
         "file_name": "uploads/bags/grey.jpg",
         "model_name": "Iridescent Black Beaded Bag",
         "category": "bags",
-        "color_palette": [
-            "Grey",
-            "Multi-color iridescent"
-        ],
-        "details": [
-            "Beaded shoulder strap",
-            "DARIN'S tag"
-        ],
-        "style": [
-            "Edgy",
-            "Night-out"
-        ]
+        "color_palette": ["Grey", "Multi-color iridescent"],
+        "details": ["Beaded shoulder strap", "DARIN'S tag"],
+        "style": ["Edgy", "Night-out"],
+        "price": 130
     },
     {
         "file_name": "uploads/bags/pink.JPG",
         "model_name": "Blue Beaded Classic Bag",
         "category": "bags",
-        "color_palette": [
-            "Blue"
-        ],
-        "details": [
-            "Beaded handle",
-            "DARIN'S logo plate"
-        ],
-        "style": [
-            "Vibrant",
-            "Chic"
-        ]
+        "color_palette": ["Blue"],
+        "details": ["Beaded handle", "DARIN'S logo plate"],
+        "style": ["Vibrant", "Chic"],
+        "price": 110
     },
     {
-        "file_name": "uploads/bracelets/bracelet_1.png",
+        "file_name": "uploads/bracelets/green.JPG",
         "model_name": "Pearl Charm Bracelet",
         "category": "bracelets",
-        "color_palette": [
-            "White",
-            "Pearl"
-        ],
-        "details": [
-            "Handmade",
-            "Charm accent",
-            "Adjustable fit"
-        ],
-        "style": [
-            "Elegant",
-            "Soft"
-        ]
+        "color_palette": ["White", "Pearl"],
+        "details": ["Handmade", "Charm accent", "Adjustable fit"],
+        "style": ["Elegant", "Soft"],
+        "price": 45
     },
     {
         "file_name": "uploads/bracelets/bracelet_2.png",
         "model_name": "Blue Beaded Bracelet",
         "category": "bracelets",
-        "color_palette": [
-            "Blue",
-            "Silver"
-        ],
-        "details": [
-            "Handmade",
-            "Beaded design",
-            "Lightweight"
-        ],
-        "style": [
-            "Chic",
-            "Minimal"
-        ]
+        "color_palette": ["Blue", "Silver"],
+        "details": ["Handmade", "Beaded design", "Lightweight"],
+        "style": ["Chic", "Minimal"],
+        "price": 35
     },
     {
         "file_name": "uploads/bracelets/bracelet_4.png",
         "model_name": "Black Statement Bracelet",
         "category": "bracelets",
-        "color_palette": [
-            "Black"
-        ],
-        "details": [
-            "Handmade",
-            "Statement piece",
-            "Secure clasp"
-        ],
-        "style": [
-            "Romantic",
-            "Glamorous"
-        ]
+        "color_palette": ["Black"],
+        "details": ["Handmade", "Statement piece", "Secure clasp"],
+        "style": ["Romantic", "Glamorous"],
+        "price": 50
     },
     {
         "file_name": "uploads/bracelets/bracelet_4.png",
         "model_name": "Black Statement Bracelet",
         "category": "bracelets",
-        "color_palette": [
-            "Black"
-        ],
-        "details": [
-            "Handmade",
-            "Statement piece",
-            "Secure clasp"
-        ],
-        "style": [
-            "Edgy",
-            "Night-out"
-        ]
+        "color_palette": ["Black"],
+        "details": ["Handmade", "Statement piece", "Secure clasp"],
+        "style": ["Edgy", "Night-out"],
+        "price": 50
     }
 ]

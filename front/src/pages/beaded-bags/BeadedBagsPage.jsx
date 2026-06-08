@@ -98,8 +98,9 @@ export default function BeadedBagsPage() {
                     </p>
 
                     <div className="flex items-center justify-between">
+                      {/* ВОТ ЗДЕСЬ ИСПРАВЛЕННАЯ ЦЕНА ИЗ БАЗЫ */}
                       <span className="font-['Perpetua_Titling_MT:Bold',sans-serif] text-[32px] tracking-[5.76px] text-black">
-                        $120
+                        ${bag.price || "0"}
                       </span>
 
                       <button
