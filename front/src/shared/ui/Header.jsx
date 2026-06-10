@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { ShoppingBag, User, LogOut } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 
-function Header({ token, setToken }) {
+function Header({ token, setToken, setUser, user }) {
   const navigate = useNavigate();
 
 
@@ -11,9 +11,13 @@ function Header({ token, setToken }) {
   const baseClass =
     "text-[#f5efe8] no-underline text-[18px] tracking-[0.18em]";
 
+  const isManager = user?.role === "manager" || user?.role === "admin";
+
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
+    setUser?.(null);
     navigate("/");
   };
 
@@ -39,6 +43,12 @@ function Header({ token, setToken }) {
         <NavLink to="/custom-studio" className={baseClass}>
           CUSTOM STUDIO
         </NavLink>
+
+        {isManager && (
+          <NavLink to="/admin" className={baseClass}>
+            MANAGE
+          </NavLink>
+        )}
       </nav>
 
       <div className="flex items-center gap-3 md:gap-4 lg:gap-5">

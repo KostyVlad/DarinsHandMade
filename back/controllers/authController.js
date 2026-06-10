@@ -1,6 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/userModel');
+
+const googleClient = process.env.GOOGLE_CLIENT_ID
+  ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+  : null;
 
 const createToken = (user) => jwt.sign(
   { id: user._id, name: user.name, email: user.email, role: user.role },
@@ -41,41 +46,49 @@ const signin = async (req, res) => {
 };
 
 const googleAuth = async (req, res) => {
+  if (!googleClient) {
+    return res.status(501).json({ success: false, msg: 'Google sign-in is not configured' });
+  }
+
   try {
-    const { name, email, avatar, googleId } = req.body;
+    const { idToken } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload?.email || !payload.email_verified) {
+      return res.status(401).json({ success: false, msg: 'Google account email not verified' });
+    }
+
+    const email = payload.email.toLowerCase();
     let user = await User.findOne({ email });
 
     if (!user) {
       user = await User.create({
-        name,
+        name: payload.name || email.split('@')[0],
         email,
-        avatar: avatar || '',
-        googleId: googleId || null,
-        password: await bcrypt.hash(String(Date.now()), 10),
+        avatar: payload.picture || '',
+        googleId: payload.sub,
+        password: await bcrypt.hash(`google:${payload.sub}:${Date.now()}`, 10),
       });
+    } else if (!user.googleId) {
+      user.googleId = payload.sub;
+      await user.save();
     }
 
     const token = createToken(user);
     res.status(200).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, role: user.role } });
   } catch (err) {
-    res.status(500).json({ success: false, msg: err.message });
+    res.status(401).json({ success: false, msg: 'Invalid Google token' });
   }
 };
 
 const me = async (req, res) => {
-  try {
-    const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ success: false, msg: 'No token' });
-
-    const token = auth.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) return res.status(404).json({ success: false, msg: 'User not found' });
-
-    res.status(200).json({ success: true, user });
-  } catch (err) {
-    res.status(401).json({ success: false, msg: 'Invalid token' });
-  }
+  // `protect` has already verified the token and loaded the current user.
+  res.status(200).json({ success: true, user: req.user });
 };
 
 module.exports = { signup, signin, googleAuth, me };

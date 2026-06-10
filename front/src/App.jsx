@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "./context/CartContext";
 
 import Header from "./shared/ui/Header";
@@ -13,20 +14,62 @@ import LoginPage from "./pages/login/LoginPage";
 import CartPage from "./pages/cart/CartPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
+import AdminPage from "./pages/admin/AdminPage";
+
+const API = "http://localhost:5000";
+
+function readUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user")) || null;
+  } catch {
+    return null;
+  }
+}
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [user, setUser] = useState(readUser);
 
   useEffect(() => {
-    const syncToken = () => setToken(localStorage.getItem("token"));
-    window.addEventListener("storage", syncToken);
-    return () => window.removeEventListener("storage", syncToken);
+    const sync = () => {
+      setToken(localStorage.getItem("token"));
+      setUser(readUser());
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
 
+  // Refresh the user (and current role) from the server whenever the token
+  // changes, so the /admin guard never relies on a stale or missing cache.
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    let active = true;
+    fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data?.user) {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const isManager = user?.role === "manager" || user?.role === "admin";
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
+    <GoogleOAuthProvider clientId={googleClientId}>
     <CartProvider token={token}>
       <BrowserRouter>
-        <Header token={token} setToken={setToken} />
+        <Header token={token} setToken={setToken} setUser={setUser} user={user} />
 
         <div>
           <Routes>
@@ -36,16 +79,21 @@ function App() {
             <Route path="/bracelets" element={<BraceletsPage />} />
 
             <Route path="/custom-studio" element={<CustomStudioPage />} />
-            <Route path="/login" element={<LoginPage setToken={setToken} />} />
+            <Route path="/login" element={<LoginPage setToken={setToken} setUser={setUser} />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route
+              path="/admin"
+              element={isManager ? <AdminPage token={token} /> : <Navigate to="/login" replace />}
+            />
           </Routes>
         </div>
 
         <Footer />
       </BrowserRouter>
     </CartProvider>
+    </GoogleOAuthProvider>
   );
 }
 

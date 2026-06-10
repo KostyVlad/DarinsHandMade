@@ -72,7 +72,7 @@ export default function BeadedBagsPage() {
                 const isInCart = items.some((cartItem) => cartItem.id === bag._id);
 
                 return (
-                  <div key={bag._id} className="group">
+                  <div key={bag._id} className="group flex flex-col h-full">
                     <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                       <img
                         src={`http://localhost:5000/${bag.file_name.replace(/^\//, '')}`}
@@ -105,7 +105,7 @@ export default function BeadedBagsPage() {
                       View Details →
                     </Link>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-auto">
                       <span className="font-['Perpetua_Titling_MT'] text-[32px] tracking-[5.76px] text-black">
                         ${bag.price || "0"}
                       </span>

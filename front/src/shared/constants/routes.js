@@ -5,4 +5,5 @@ export const ROUTES = {
   CROCHET: "/crochet",
   CUSTOM_STUDIO: "/custom-studio",
   BEADED_BAGS: "/beaded-bags",
+  ADMIN: "/admin",
 };

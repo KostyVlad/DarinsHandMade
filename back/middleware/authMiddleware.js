@@ -1,20 +1,32 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, msg: 'Нет доступа, нужен токен' });
+        return res.status(401).json({ success: false, msg: 'No token, authorization denied' });
     }
 
     try {
         const token = authHeader.split(' ')[1];
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        const user = await User.findById(decoded.id).select('-password');
+        if (!user) return res.status(401).json({ success: false, msg: 'User no longer exists' });
+
+        // Re-read role/identity from the DB so token claims can't go stale
+        // (e.g. a demoted manager keeps a 7-day token).
+        req.user = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar,
+            role: user.role,
+        };
         next();
     } catch (err) {
-        res.status(401).json({ success: false, msg: 'Токен недействителен или истек' });
+        res.status(401).json({ success: false, msg: 'Token is invalid or has expired' });
     }
 };
 

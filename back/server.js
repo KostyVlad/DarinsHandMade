@@ -30,6 +30,16 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: "Too many authentication attempts, please try again later."
+});
+app.use('/api/auth/signin', authLimiter);
+app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/google', authLimiter);
+
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -37,6 +47,23 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
+
+
+// Centralized error handler — keeps responses JSON so the client can always
+// res.json() the body (multer upload failures would otherwise return HTML 500).
+app.use((err, req, res, next) => {
+  if (err.name === 'MulterError') {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Image is too large (max 8MB)'
+      : 'Image upload failed';
+    return res.status(400).json({ success: false, msg });
+  }
+  if (err.message === 'Only image files are allowed') {
+    return res.status(400).json({ success: false, msg: err.message });
+  }
+  console.error(err);
+  res.status(500).json({ success: false, msg: 'Server error' });
+});
 
 
 const start = async () => {

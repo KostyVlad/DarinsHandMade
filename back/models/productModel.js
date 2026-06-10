@@ -6,7 +6,7 @@ const productSchema = new mongoose.Schema({
     color_palette: { type: [String], default: [] },
     details: { type: [String], default: [] },
     style: { type: [String], default: [] },
-    category: { type: String, required: true },
+    category: { type: String, required: true, enum: ['bags', 'bracelets'] },
     price: Number
 }, { timestamps: true });
 
