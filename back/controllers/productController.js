@@ -28,7 +28,7 @@ const removeImageFile = (fileName) => {
 
 const createProduct = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ success: false, msg: 'Нужно изображение товара' });
+    if (!req.file) return res.status(400).json({ success: false, msg: 'Product image is required' });
 
     const p = await Product.create({
       file_name: filePathFromUpload(req.file),

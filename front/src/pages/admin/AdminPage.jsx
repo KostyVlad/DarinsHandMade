@@ -29,7 +29,7 @@ export default function AdminPage({ token }) {
       const data = await res.json();
       setProducts(data.data || []);
     } catch {
-      setMessage({ type: "error", text: "Не удалось загрузить товары" });
+      setMessage({ type: "error", text: "Failed to load products" });
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function AdminPage({ token }) {
     setMessage(null);
 
     if (!editingId && !imageFile) {
-      setMessage({ type: "error", text: "Загрузите изображение товара" });
+      setMessage({ type: "error", text: "Upload a product image" });
       return;
     }
 
@@ -91,9 +91,9 @@ export default function AdminPage({ token }) {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || "Ошибка сохранения");
+      if (!res.ok) throw new Error(data.msg || "Save failed");
 
-      setMessage({ type: "success", text: editingId ? "Товар обновлён" : "Товар добавлен" });
+      setMessage({ type: "success", text: editingId ? "Product updated" : "Product added" });
       resetForm();
       await loadProducts();
     } catch (err) {
@@ -104,7 +104,7 @@ export default function AdminPage({ token }) {
   };
 
   const handleDelete = async (p) => {
-    if (!window.confirm(`Удалить «${p.model_name}»?`)) return;
+    if (!window.confirm(`Delete "${p.model_name}"?`)) return;
     setMessage(null);
     try {
       const res = await fetch(`${API}/api/products/${p._id}`, {
@@ -112,9 +112,9 @@ export default function AdminPage({ token }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || "Ошибка удаления");
+      if (!res.ok) throw new Error(data.msg || "Delete failed");
       if (editingId === p._id) resetForm();
-      setMessage({ type: "success", text: "Товар удалён" });
+      setMessage({ type: "success", text: "Product deleted" });
       await loadProducts();
     } catch (err) {
       setMessage({ type: "error", text: err.message });

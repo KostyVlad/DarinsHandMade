@@ -19,19 +19,19 @@ const validateSignup = (req, res, next) => {
     const { name, email, password } = req.body;
 
     if (!isString(name) || !isString(email) || !isString(password)) {
-        return fail(res, 'Неверный формат данных');
+        return fail(res, 'Invalid data format');
     }
 
     const trimmedName = name.trim();
     if (trimmedName.length < NAME_MIN || trimmedName.length > NAME_MAX) {
-        return fail(res, `Имя должно быть от ${NAME_MIN} до ${NAME_MAX} символов`);
+        return fail(res, `Name must be between ${NAME_MIN} and ${NAME_MAX} characters`);
     }
 
     const normalizedEmail = checkEmail(email);
-    if (!normalizedEmail) return fail(res, 'Некорректный email');
+    if (!normalizedEmail) return fail(res, 'Invalid email');
 
     if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
-        return fail(res, `Пароль должен быть от ${PASSWORD_MIN} до ${PASSWORD_MAX} символов`);
+        return fail(res, `Password must be between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters`);
     }
 
     req.body.name = trimmedName;
@@ -43,13 +43,13 @@ const validateSignin = (req, res, next) => {
     const { email, password } = req.body;
 
     if (!isString(email) || !isString(password)) {
-        return fail(res, 'Неверный формат данных');
+        return fail(res, 'Invalid data format');
     }
     if (!email.trim() || !password) {
-        return fail(res, 'Email и пароль обязательны');
+        return fail(res, 'Email and password are required');
     }
     if (password.length > PASSWORD_MAX) {
-        return fail(res, 'Неверный формат данных');
+        return fail(res, 'Invalid data format');
     }
 
     req.body.email = email.trim().toLowerCase();
@@ -60,7 +60,7 @@ const validateGoogle = (req, res, next) => {
     const { idToken } = req.body;
 
     if (!isString(idToken) || idToken.length < 1 || idToken.length > 4096) {
-        return fail(res, 'Неверный формат данных');
+        return fail(res, 'Invalid data format');
     }
 
     next();

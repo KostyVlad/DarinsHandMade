@@ -9,11 +9,17 @@ import greenBag from "../home/assets/greenCustomSectionbag.png";
 import pinkBag from "../home/assets/pinkCustomSectionbag.png";
 import purpleBag from "../home/assets/purpleCustomSectionbag.png";
 
+// Real product photos, one per size (filenames match the cm dimensions below).
+import sizeMini from "./10x8.png";
+import sizeSmall from "./14x11.png";
+import sizeMedium from "./20x16.png";
+import sizeLarge from "./28x22.png";
+
 const SIZES = [
-  { id: "mini", label: "Mini", cm: "10×8 cm", price: 120 },
-  { id: "small", label: "Small", cm: "14×11 cm", price: 180 },
-  { id: "medium", label: "Medium", cm: "20×16 cm", price: 260 },
-  { id: "large", label: "Large", cm: "28×22 cm", price: 360 },
+  { id: "mini", label: "Mini", cm: "10×8 cm", price: 120, image: sizeMini },
+  { id: "small", label: "Small", cm: "14×11 cm", price: 180, image: sizeSmall },
+  { id: "medium", label: "Medium", cm: "20×16 cm", price: 260, image: sizeMedium },
+  { id: "large", label: "Large", cm: "28×22 cm", price: 360, image: sizeLarge },
 ];
 
 const STRAPS = [
@@ -31,12 +37,12 @@ const COLORS = [
   { id: "purple", name: "Purple", hex: "#8d47ff", image: purpleBag },
 ];
 
-function BagPreview({ color, strap }) {
+function BagPreview({ image, alt, strap }) {
   return (
     <div className="relative w-full h-full">
       <img
-        src={color.image}
-        alt={`${color.name} beaded bag`}
+        src={image}
+        alt={alt}
         className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
       />
       {strap.overlay && (
@@ -271,13 +277,13 @@ export default function CustomStudioPage() {
         <div className="lg:sticky lg:top-8">
           <div className="border border-black/10 p-2 bg-[#FAFAFA] aspect-square flex items-center justify-center">
             <motion.div
-              key={`${config.color.id}-${config.strap}`}
+              key={`${config.size}-${config.strap}`}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
               className="w-full h-full max-w-[380px] max-h-[380px] mx-auto"
             >
-              <BagPreview color={config.color} strap={strapInfo} />
+              <BagPreview image={sizeInfo.image} alt={`${sizeInfo.label} beaded bag`} strap={strapInfo} />
             </motion.div>
           </div>
 
