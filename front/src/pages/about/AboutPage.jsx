@@ -1,24 +1,23 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import bgImage from "./BACKGROUDN.png";
 
-const BEAD_COLORS = ["#FFFFFF", "#F5EFE8", "#E5D9C5", "#FFC0CB", "#A9A9A9", "#050000"];
+// Crystal-bead tones to match the beaded bags — cobalt, royal, cyan, aqua, clear, lilac sheen.
+const BEAD_COLORS = ["#2F6BFF", "#1B3FD1", "#36C5F0", "#7FE3FF", "#BFEAFF", "#E8F7FF", "#9B8CFF"];
 
 export default function AboutPage() {
-  const [beads, setBeads] = useState([]);
-
-  useEffect(() => {
-    setBeads(
-      Array.from({ length: 36 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        duration: Math.random() * 5 + 5,
-        delay: Math.random() * 6,
-        size: Math.random() * 10 + 6,
-        color: BEAD_COLORS[Math.floor(Math.random() * BEAD_COLORS.length)],
-      }))
-    );
-  }, []);
+  // Generate the beads once, on first render (random values, so not derived from props/state).
+  const [beads] = useState(() =>
+    Array.from({ length: 44 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      duration: Math.random() * 6 + 6,
+      delay: Math.random() * 8,
+      size: Math.random() * 14 + 8,
+      sway: Math.random() * 3 + 3,
+      color: BEAD_COLORS[Math.floor(Math.random() * BEAD_COLORS.length)],
+    }))
+  );
 
   return (
     <div
@@ -28,18 +27,57 @@ export default function AboutPage() {
       <style>{`
         @keyframes fall {
           0%   { transform: translateY(-20vh) rotate(0deg);   opacity: 0; }
-          10%  { opacity: 0.8; }
-          90%  { opacity: 0.8; }
+          10%  { opacity: 0.9; }
+          90%  { opacity: 0.9; }
           100% { transform: translateY(120vh) rotate(360deg); opacity: 0; }
+        }
+        /* Gentle side-to-side drift — uses margin (not transform) so it won't fight 'fall'. */
+        @keyframes sway {
+          0%, 100% { margin-left: -10px; }
+          50%      { margin-left: 10px; }
         }
         .bead {
           position: absolute;
           top: -20px;
           border-radius: 50%;
-          box-shadow: inset -2px -2px 4px rgba(0,0,0,0.45), 1px 1px 3px rgba(255,255,255,0.45);
-          animation-name: fall;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
+          /* Faceted crystal bead built from layered gradients (top layer drawn first):
+             1) bright highlight, 2) angular facets catching light, 3) aurora rainbow sheen,
+             4) the bead colour with a dark rim for roundness. */
+          background:
+            radial-gradient(circle at 32% 26%,
+              rgba(255,255,255,0.98) 0%, rgba(255,255,255,0) 28%),
+            conic-gradient(from 35deg,
+              rgba(255,255,255,0.45) 0deg,
+              rgba(255,255,255,0.04) 38deg,
+              rgba(0,0,0,0.20) 92deg,
+              rgba(255,255,255,0.32) 150deg,
+              rgba(255,255,255,0.04) 205deg,
+              rgba(0,0,0,0.20) 268deg,
+              rgba(255,255,255,0.40) 322deg,
+              rgba(255,255,255,0.04) 360deg),
+            radial-gradient(circle at 72% 78%,
+              rgba(120,225,255,0.55) 0%, rgba(180,140,255,0.30) 55%, rgba(0,0,0,0) 75%),
+            radial-gradient(circle at 50% 50%,
+              var(--bead) 55%, rgba(0,0,0,0.30) 100%);
+          box-shadow:
+            inset -1px -1px 3px rgba(0,0,0,0.25),
+            inset 2px 2px 5px rgba(255,255,255,0.55),
+            0 0 9px rgba(150,220,255,0.35);
+          animation-name: fall, sway;
+          animation-timing-function: linear, ease-in-out;
+          animation-iteration-count: infinite, infinite;
+          will-change: transform;
+        }
+        /* Tiny sparkle glint on each bead. */
+        .bead::after {
+          content: "";
+          position: absolute;
+          top: 16%;
+          left: 22%;
+          width: 28%;
+          height: 28%;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0) 70%);
         }
       `}</style>
 
@@ -53,9 +91,9 @@ export default function AboutPage() {
             left: `${b.left}%`,
             width: b.size,
             height: b.size,
-            backgroundColor: b.color,
-            animationDuration: `${b.duration}s`,
-            animationDelay: `${b.delay}s`,
+            "--bead": b.color,
+            animationDuration: `${b.duration}s, ${b.sway}s`,
+            animationDelay: `${b.delay}s, ${b.delay}s`,
           }}
         />
       ))}
