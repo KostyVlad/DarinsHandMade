@@ -15,8 +15,6 @@ const protect = async (req, res, next) => {
         const user = await User.findById(decoded.id).select('-password');
         if (!user) return res.status(401).json({ success: false, msg: 'User no longer exists' });
 
-        // Re-read role/identity from the DB so token claims can't go stale
-        // (e.g. a demoted manager keeps a 7-day token).
         req.user = {
             id: user._id,
             name: user.name,

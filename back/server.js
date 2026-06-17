@@ -49,8 +49,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
 
 
-// Centralized error handler — keeps responses JSON so the client can always
-// res.json() the body (multer upload failures would otherwise return HTML 500).
 app.use((err, req, res, next) => {
   if (err.name === 'MulterError') {
     const msg = err.code === 'LIMIT_FILE_SIZE'

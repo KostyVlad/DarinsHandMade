@@ -4,8 +4,6 @@ const fs = require('fs');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Flat folder: the storage path must not depend on req.body.category,
-        // which isn't reliably parsed before the file part in a multipart stream.
         const dir = path.join(__dirname, '..', 'uploads');
         fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);

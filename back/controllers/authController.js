@@ -10,7 +10,7 @@ const googleClient = process.env.GOOGLE_CLIENT_ID
 const createToken = (user) => jwt.sign(
   { id: user._id, name: user.name, email: user.email, role: user.role },
   process.env.JWT_SECRET,
-  { expiresIn: '7d' }
+  { expiresIn: '1h' }
 );
 
 const signup = async (req, res) => {
@@ -87,7 +87,6 @@ const googleAuth = async (req, res) => {
 };
 
 const me = async (req, res) => {
-  // `protect` has already verified the token and loaded the current user.
   res.status(200).json({ success: true, user: req.user });
 };
 

@@ -39,8 +39,6 @@ function App() {
     return () => window.removeEventListener("storage", sync);
   }, []);
 
-  // Refresh the user (and current role) from the server whenever the token
-  // changes, so the /admin guard never relies on a stale or missing cache.
   useEffect(() => {
     if (!token) {
       setUser(null);

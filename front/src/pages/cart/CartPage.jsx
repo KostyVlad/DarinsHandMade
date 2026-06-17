@@ -72,7 +72,7 @@ export default function CartPage() {
                     </p>
                   </div>
 
-                 
+
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-3 border border-black/20 rounded-full">
                       <button
@@ -122,7 +122,7 @@ export default function CartPage() {
             </button>
           </div>
 
-          
+
           <div className="lg:col-span-1">
             <div className="border border-black/20 p-8 sticky top-8">
               <h2 className="font-['Dorsa:Regular',sans-serif] text-[48px] tracking-[8.64px] leading-none text-black mb-8 text-center m-0">
