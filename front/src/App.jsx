@@ -15,7 +15,9 @@ import ResetPasswordPage from "./pages/login/ResetPasswordPage";
 import CartPage from "./pages/cart/CartPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
+import OrderSuccessPage from "./pages/order/OrderSuccessPage";
 import AdminPage from "./pages/admin/AdminPage";
+import ManagerOrdersPage from "./pages/admin/ManagerOrdersPage";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import { API } from "./api";
@@ -81,12 +83,17 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order-success" element={<OrderSuccessPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               <Route
                 path="/admin"
                 element={isManager ? <AdminPage token={token} /> : <Navigate to="/login" replace />}
+              />
+              <Route
+                path="/admin/orders"
+                element={isManager ? <ManagerOrdersPage token={token} /> : <Navigate to="/login" replace />}
               />
             </Routes>
           </div>

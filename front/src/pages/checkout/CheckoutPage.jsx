@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { CheckCircle } from "lucide-react";
+import { API } from "../../api";
 
 export default function CheckoutPage() {
-  const { items, getTotalPrice, clearCart } = useCart();
-  const navigate = useNavigate();
-  const [submitted, setSubmitted] = useState(false);
+  const { items, getTotalPrice } = useCart();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,15 +14,20 @@ export default function CheckoutPage() {
     country: "",
     notes: "",
   });
+  const [deliveryMethod, setDeliveryMethod] = useState("delivery");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Required";
     if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = "Valid email required";
-    if (!form.address.trim()) e.address = "Required";
-    if (!form.city.trim()) e.city = "Required";
-    if (!form.country.trim()) e.country = "Required";
+    if (deliveryMethod === "delivery") {
+      if (!form.address.trim()) e.address = "Required";
+      if (!form.city.trim()) e.city = "Required";
+      if (!form.country.trim()) e.country = "Required";
+    }
     return e;
   };
 
@@ -33,45 +36,57 @@ export default function CheckoutPage() {
     if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: undefined });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-    clearCart();
-    setSubmitted(true);
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/orders/checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          items,
+          customer: { name: form.name, email: form.email, phone: form.phone },
+          shipping: { address: form.address, city: form.city, country: form.country },
+          deliveryMethod,
+          notes: form.notes,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url; // redirect to Stripe Checkout
+      } else {
+        setMessage(data.msg || "Could not start checkout.");
+        setLoading(false);
+      }
+    } catch {
+      setMessage("Server error. Please try again.");
+      setLoading(false);
+    }
   };
 
-  if (items.length === 0 && !submitted) {
+  if (items.length === 0) {
     return (
       <div className="bg-white min-h-screen flex flex-col items-center justify-center gap-8 px-8">
-        <p className="font-['Dorsa'] text-[48px] md:text-[72px] tracking-[6px] md:tracking-[12px] text-black text-center">Your cart is empty</p>
+        <p className="font-['Dorsa'] text-[48px] md:text-[72px] tracking-[6px] md:tracking-[12px] text-black text-center">
+          Your cart is empty
+        </p>
         <Link
           to="/"
           className="font-['Centaur'] text-[18px] tracking-[3px] text-black underline hover:opacity-60 transition-opacity"
         >
           Continue Shopping
         </Link>
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="bg-white min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center">
-        <CheckCircle className="w-20 h-20 text-black/30" strokeWidth={1} />
-        <h1 className="font-['Dorsa'] text-[56px] md:text-[96px] tracking-[8px] md:tracking-[17px] leading-none text-black">Order Placed</h1>
-        <p className="font-['Centaur'] text-[18px] md:text-[22px] tracking-[3px] md:tracking-[4px] text-[#666] max-w-[560px] leading-relaxed">
-          Thank you, {form.name}. We'll reach out to <span className="text-black">{form.email}</span> to confirm your order and arrange delivery.
-        </p>
-        <button
-          onClick={() => navigate("/")}
-          className="mt-4 bg-black text-white font-['Perpetua_Titling_MT'] text-[16px] tracking-[2.88px] px-12 py-4 rounded-full hover:bg-black/80 transition-colors cursor-pointer border-none"
-        >
-          Back to Home
-        </button>
       </div>
     );
   }
@@ -88,7 +103,7 @@ export default function CheckoutPage() {
           Checkout
         </h1>
         <p className="font-['Centaur'] text-[16px] md:text-[18px] tracking-[3px] text-[#888] text-center mb-16">
-          Fill in your details and we'll confirm your order
+          Review your details and continue to secure payment
         </p>
 
         <div className="grid lg:grid-cols-3 gap-16">
@@ -99,75 +114,66 @@ export default function CheckoutPage() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder="Full Name"
-                    className={inputClass("name")}
-                  />
+                  <input name="name" value={form.name} onChange={handleChange} placeholder="Full Name" className={inputClass("name")} />
                   {errors.name && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.name}</p>}
                 </div>
                 <div>
-                  <input
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="Email Address"
-                    className={inputClass("email")}
-                  />
+                  <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="Email Address" className={inputClass("email")} />
                   {errors.email && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.email}</p>}
                 </div>
                 <div className="md:col-span-2">
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder="Phone (optional)"
-                    className={inputClass("phone")}
-                  />
+                  <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone (optional)" className={inputClass("phone")} />
                 </div>
               </div>
             </div>
 
             <div>
               <h2 className="font-['Perpetua_Titling_MT'] text-[20px] tracking-[3.6px] text-black mb-6 uppercase">
-                Shipping Address
+                Delivery Method
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <input
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Street Address"
-                    className={inputClass("address")}
-                  />
-                  {errors.address && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.address}</p>}
-                </div>
-                <div>
-                  <input
-                    name="city"
-                    value={form.city}
-                    onChange={handleChange}
-                    placeholder="City"
-                    className={inputClass("city")}
-                  />
-                  {errors.city && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.city}</p>}
-                </div>
-                <div>
-                  <input
-                    name="country"
-                    value={form.country}
-                    onChange={handleChange}
-                    placeholder="Country"
-                    className={inputClass("country")}
-                  />
-                  {errors.country && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.country}</p>}
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: "delivery", label: "Delivery", desc: "Ship to my address" },
+                  { id: "pickup", label: "Self Pickup", desc: "Collect in person" },
+                ].map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.id}
+                    onClick={() => setDeliveryMethod(opt.id)}
+                    className={`p-5 border text-left transition-all cursor-pointer ${
+                      deliveryMethod === opt.id ? "border-black bg-black text-white" : "border-black/20 hover:border-black/50"
+                    }`}
+                  >
+                    <p className="font-['Perpetua_Titling_MT'] text-[13px] tracking-[2px] uppercase">{opt.label}</p>
+                    <p className={`font-['Centaur'] text-[13px] tracking-[1px] mt-1 ${deliveryMethod === opt.id ? "text-white/70" : "text-black/50"}`}>
+                      {opt.desc}
+                    </p>
+                  </button>
+                ))}
               </div>
             </div>
+
+            {deliveryMethod === "delivery" && (
+              <div>
+                <h2 className="font-['Perpetua_Titling_MT'] text-[20px] tracking-[3.6px] text-black mb-6 uppercase">
+                  Shipping Address
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <input name="address" value={form.address} onChange={handleChange} placeholder="Street Address" className={inputClass("address")} />
+                    {errors.address && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.address}</p>}
+                  </div>
+                  <div>
+                    <input name="city" value={form.city} onChange={handleChange} placeholder="City" className={inputClass("city")} />
+                    {errors.city && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.city}</p>}
+                  </div>
+                  <div>
+                    <input name="country" value={form.country} onChange={handleChange} placeholder="Country" className={inputClass("country")} />
+                    {errors.country && <p className="text-red-500 text-[13px] tracking-[1px] mt-1">{errors.country}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <h2 className="font-['Perpetua_Titling_MT'] text-[20px] tracking-[3.6px] text-black mb-6 uppercase">
@@ -183,11 +189,16 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {message && (
+              <p className="text-red-500 font-['Centaur'] text-[15px] tracking-[1px]">{message}</p>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-black text-white font-['Perpetua_Titling_MT'] text-[16px] tracking-[2.88px] py-5 rounded-full hover:bg-black/80 transition-colors cursor-pointer border-none"
+              disabled={loading}
+              className="w-full bg-black text-white font-['Perpetua_Titling_MT'] text-[16px] tracking-[2.88px] py-5 rounded-full hover:bg-black/80 transition-colors cursor-pointer border-none disabled:opacity-60"
             >
-              Place Order
+              {loading ? "Redirecting to payment…" : "Proceed to Payment"}
             </button>
           </form>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { API } from "../../api";
 
 const EMPTY = {
@@ -136,6 +137,12 @@ export default function AdminPage({ token }) {
         <p className="font-['Centaur'] text-[13px] md:text-[15px] tracking-[4px] text-white/70 uppercase mt-2">
           Add, edit and remove bags & bracelets
         </p>
+        <Link
+          to="/admin/orders"
+          className="inline-block mt-5 border border-white/40 text-white font-['Perpetua_Titling_MT'] text-[11px] tracking-[2px] uppercase px-6 py-2 no-underline hover:bg-white hover:text-black transition-colors"
+        >
+          View Orders →
+        </Link>
       </div>
 
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 items-start">

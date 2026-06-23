@@ -12,10 +12,17 @@ const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const { stripeWebhook } = require('./controllers/orderController');
 
 const app = express();
 
 app.use(cors());
+
+// Stripe webhook needs the raw request body for signature verification, so it
+// must be registered before the JSON body parser.
+app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
+
 app.use(express.json());
 
 
@@ -56,6 +63,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 
 app.use((err, req, res, next) => {
