@@ -10,6 +10,8 @@ import BeadedBagsPage from "./pages/beaded-bags/BeadedBagsPage";
 import BraceletsPage from "./pages/bracelets/BraceletsPage";
 import CustomStudioPage from "./pages/custom-studio/CustomStudioPage";
 import LoginPage from "./pages/login/LoginPage";
+import ForgotPasswordPage from "./pages/login/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/login/ResetPasswordPage";
 import CartPage from "./pages/cart/CartPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
@@ -75,6 +77,8 @@ function App() {
 
               <Route path="/custom-studio" element={<CustomStudioPage />} />
               <Route path="/login" element={<LoginPage setToken={setToken} setUser={setUser} />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />

@@ -217,12 +217,12 @@ export default function LoginPage({ setToken, setUser }) {
 
             {isLogin && (
               <div className="text-right">
-                <a
-                  href="#"
-                  className="font-['Centaur:Regular',sans-serif] text-[13px] tracking-[2px] text-black/40 hover:text-black transition-colors"
+                <Link
+                  to="/forgot-password"
+                  className="font-['Centaur:Regular',sans-serif] text-[13px] tracking-[2px] text-black/40 hover:text-black transition-colors no-underline"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
             )}
 

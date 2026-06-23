@@ -38,6 +38,16 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/signin', authLimiter);
 app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Password-reset sends an email per request, so it gets a stricter limiter that
+// counts every hit (no skipSuccessfulRequests) to protect the email quota.
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { success: false, msg: 'Too many password reset requests. Please try again in an hour.' }
+});
+app.use('/api/auth/forgot-password', resetLimiter);
 
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

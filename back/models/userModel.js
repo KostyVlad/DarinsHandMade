@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, default: null },
   avatar: { type: String, default: '' },
   role: { type: String, default: 'user' },
+  resetPasswordToken: { type: String, default: null, select: false },
+  resetPasswordExpires: { type: Date, default: null, select: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
