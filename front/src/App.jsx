@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "./context/CartContext";
 
 import Header from "./shared/ui/Header";
@@ -62,12 +61,9 @@ function App() {
 
   const isManager = user?.role === "manager" || user?.role === "admin";
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <CartProvider token={token}>
-        <BrowserRouter>
+    <CartProvider token={token}>
+      <BrowserRouter>
           <Header token={token} setToken={setToken} setUser={setUser} user={user} />
 
           <div>
@@ -94,7 +90,6 @@ function App() {
           <Footer />
         </BrowserRouter>
       </CartProvider>
-    </GoogleOAuthProvider>
   );
 }
 

@@ -38,7 +38,6 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/signin', authLimiter);
 app.use('/api/auth/signup', authLimiter);
-app.use('/api/auth/google', authLimiter);
 
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

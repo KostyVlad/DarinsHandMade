@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
-
 import { API } from "../../api";
 
 export default function LoginPage({ setToken, setUser }) {
@@ -47,28 +45,6 @@ export default function LoginPage({ setToken, setUser }) {
       setMessage("Server error");
     }
   };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setMessage("");
-    try {
-      const res = await fetch(`${API}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: credentialResponse.credential }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.token) {
-        applyAuth(data);
-      } else {
-        setMessage(data.msg || "Google auth failed");
-      }
-    } catch (err) {
-      setMessage("Server error");
-    }
-  };
-
 
   const toggleLoginMode = (mode) => {
     setIsLogin(mode);
@@ -265,25 +241,6 @@ export default function LoginPage({ setToken, setUser }) {
               </button>
             </div>
           </form>
-
-
-          <div className="flex items-center gap-4 my-8">
-            <div className="flex-1 h-px bg-black/10" />
-            <span className="font-['Centaur:Regular',sans-serif] text-[12px] tracking-[2px] text-black/30">
-              or
-            </span>
-            <div className="flex-1 h-px bg-black/10" />
-          </div>
-
-
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setMessage("Google auth failed")}
-              text={isLogin ? "signin_with" : "signup_with"}
-              width="320"
-            />
-          </div>
 
 
           <p className="text-center mt-10 font-['Centaur:Regular',sans-serif] text-[14px] tracking-[2px] text-black/40">

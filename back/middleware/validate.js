@@ -56,14 +56,4 @@ const validateSignin = (req, res, next) => {
     next();
 };
 
-const validateGoogle = (req, res, next) => {
-    const { idToken } = req.body;
-
-    if (!isString(idToken) || idToken.length < 1 || idToken.length > 4096) {
-        return fail(res, 'Invalid data format');
-    }
-
-    next();
-};
-
-module.exports = { validateSignup, validateSignin, validateGoogle };
+module.exports = { validateSignup, validateSignin };
