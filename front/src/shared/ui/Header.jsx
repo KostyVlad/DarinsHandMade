@@ -44,7 +44,7 @@ function Header({ token, setToken, setUser, user }) {
           {menuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
 
-        <nav className="hidden md:flex items-center gap-5 lg:gap-8">
+        <nav className="hidden md:flex md:flex-1 items-center justify-between gap-4 md:mr-8 lg:mr-12">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} className={baseClass}>
               {l.label}
