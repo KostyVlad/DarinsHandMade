@@ -15,6 +15,8 @@ import CartPage from "./pages/cart/CartPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
 import AdminPage from "./pages/admin/AdminPage";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import { API } from "./api";
 
 function readUser() {
@@ -80,6 +82,8 @@ function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/products/:id" element={<ProductDetailPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               <Route
                 path="/admin"
                 element={isManager ? <AdminPage token={token} /> : <Navigate to="/login" replace />}
