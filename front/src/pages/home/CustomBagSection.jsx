@@ -22,23 +22,23 @@ function CustomBagSection() {
 
   return (
     <section className="w-full bg-black">
-      <div className="mx-auto flex max-w-[1512px] items-center justify-between px-[50px] py-[40px]">
+      <div className="mx-auto flex flex-col md:flex-row items-center md:justify-between max-w-[1512px] px-[20px] md:px-[50px] py-[40px]">
         <motion.div
-          className="w-[42%]"
+          className="w-full md:w-[42%] flex flex-col items-center md:items-start text-center md:text-left"
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         >
           <h2
-            className="m-0 text-white text-[150px] leading-[0.78] tracking-[0.18em]"
+            className="m-0 text-white text-[60px] md:text-[150px] leading-[0.78] tracking-[0.18em]"
             style={{ fontFamily: "Dorsa, sans-serif" }}
           >
             CREATE YOUR OWN DESIGN
           </h2>
 
           <p
-            className="mt-[50px] max-w-[560px] text-center text-white text-[32px] leading-[1.45] tracking-[0.12em]"
+            className="mt-[30px] md:mt-[50px] max-w-[560px] text-center text-white text-[20px] md:text-[32px] leading-[1.45] tracking-[0.12em]"
             style={{ fontFamily: "Cormorant Garamond, serif" }}
           >
             Choose the shape, color, and type of beads. Create a unique
@@ -81,7 +81,7 @@ function CustomBagSection() {
           </motion.div>
         </motion.div>
 
-        <div className="flex w-[10%] flex-col items-center gap-[24px]">
+        <div className="flex w-full md:w-[10%] flex-row md:flex-col items-center justify-center gap-[24px] my-8 md:my-0">
           {bagOptions.map((item, i) => (
             <motion.button
               key={i}
@@ -100,7 +100,7 @@ function CustomBagSection() {
           ))}
         </div>
 
-        <div className="flex w-[38%] justify-end">
+        <div className="flex w-full md:w-[38%] justify-center md:justify-end">
           <AnimatePresence mode="wait">
             <motion.img
               key={selected}

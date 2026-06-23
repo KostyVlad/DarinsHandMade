@@ -33,32 +33,32 @@ export default function BraceletsPage() {
 
     return (
         <div className="bg-white min-h-screen">
-            <section className="relative bg-[#050000] text-white py-32 px-8">
+            <section className="relative bg-[#050000] text-white py-20 md:py-32 px-6 md:px-8">
                 <div className="max-w-[1440px] mx-auto text-center">
-                    <h1 className="font-['Dorsa'] text-[120px] md:text-[200px] tracking-[21.6px] leading-none mb-8">
+                    <h1 className="font-['Dorsa'] text-[56px] sm:text-[90px] md:text-[200px] tracking-[6px] md:tracking-[21.6px] leading-none mb-8">
                         BRACELETS
                     </h1>
-                    <p className="font-['Centaur'] text-[#ccc] text-[24px] tracking-[4.32px] max-w-[700px] mx-auto">
+                    <p className="font-['Centaur'] text-[#ccc] text-[18px] md:text-[24px] tracking-[3px] md:tracking-[4.32px] max-w-[700px] mx-auto">
                         Exquisite handcrafted beaded bracelets. Each piece is a unique accessory, meticulously designed and created by hand.
                     </p>
                 </div>
             </section>
 
-            <section className="py-16 px-8 bg-[#f8f8f8]">
+            <section className="py-16 px-6 md:px-8 bg-[#f8f8f8]">
                 <div className="max-w-[900px] mx-auto text-center">
-                    <p className="font-['Centaur'] text-[#333] text-[28px] tracking-[5.04px] italic leading-relaxed">
+                    <p className="font-['Centaur'] text-[#333] text-[20px] md:text-[28px] tracking-[3px] md:tracking-[5.04px] italic leading-relaxed">
                         "A delicate bracelet is not just a detail — it's a reflection of your personality and timeless style."
                     </p>
                 </div>
             </section>
 
-            <section className="py-20 px-8">
+            <section className="py-20 px-6 md:px-8">
                 <div className="max-w-[1440px] mx-auto">
                     <div className="mb-12">
-                        <h2 className="font-['Dorsa'] text-[72px] tracking-[12.96px] leading-none text-black mb-4">
+                        <h2 className="font-['Dorsa'] text-[44px] md:text-[72px] tracking-[6px] md:tracking-[12.96px] leading-none text-black mb-4">
                             Our Collection
                         </h2>
-                        <p className="font-['Centaur'] text-[#333] text-[20px] tracking-[3.6px]">
+                        <p className="font-['Centaur'] text-[#333] text-[18px] md:text-[20px] tracking-[3.6px]">
                             Discover our curated selection of beaded bracelets
                         </p>
                     </div>
@@ -126,9 +126,9 @@ export default function BraceletsPage() {
                 </div>
             </section>
 
-            <section className="bg-black text-white py-20 px-8">
+            <section className="bg-black text-white py-20 px-6 md:px-8">
                 <div className="max-w-[1200px] mx-auto">
-                    <h2 className="font-['Dorsa'] text-[96px] tracking-[17.28px] leading-none mb-12 text-center">
+                    <h2 className="font-['Dorsa'] text-[48px] md:text-[96px] tracking-[8px] md:tracking-[17.28px] leading-none mb-12 text-center">
                         Care Instructions
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

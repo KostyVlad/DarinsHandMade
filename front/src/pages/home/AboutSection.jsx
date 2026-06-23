@@ -3,10 +3,10 @@ import aboutBag from "./assets/AboutSectionBag.png";
 
 function AboutSection() {
   return (
-    <section className="w-full bg-[#f3f3f1] -mt-[70px]">
-      <div className="mx-auto flex max-w-[1512px] items-center justify-between px-[40px] py-[40px]">
+    <section className="w-full bg-[#f3f3f1] -mt-[20px] md:-mt-[70px]">
+      <div className="mx-auto flex flex-col md:flex-row items-center md:justify-between max-w-[1512px] px-[20px] md:px-[40px] py-[40px]">
         <motion.div
-          className="w-[42%] flex justify-start"
+          className="w-full md:w-[42%] flex justify-center md:justify-start"
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -21,9 +21,9 @@ function AboutSection() {
           />
         </motion.div>
 
-        <div className="w-[58%] flex flex-col items-center">
+        <div className="w-full md:w-[58%] flex flex-col items-center">
           <motion.h2
-            className="m-0 text-black text-[138px] leading-[0.9]"
+            className="m-0 text-black text-[56px] md:text-[138px] leading-[0.9] text-center"
             style={{ fontFamily: "Dorsa, sans-serif" }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -34,7 +34,7 @@ function AboutSection() {
           </motion.h2>
 
           <motion.p
-            className="mt-[34px] max-w-[760px] text-center text-black text-[32px] leading-[1.4] tracking-[0.12em]"
+            className="mt-[34px] max-w-[760px] text-center text-black text-[20px] md:text-[32px] leading-[1.4] tracking-[0.12em]"
             style={{ fontFamily: "Cormorant Garamond, serif" }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

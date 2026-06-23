@@ -164,11 +164,11 @@ export default function CustomStudioPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-black text-white py-14 px-8 text-center">
+      <div className="bg-black text-white py-14 px-6 md:px-8 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-['Dorsa'] text-[90px] md:text-[130px] tracking-[16px] leading-none mb-4"
+          className="font-['Dorsa'] text-[52px] sm:text-[80px] md:text-[130px] tracking-[8px] md:tracking-[16px] leading-none mb-4"
         >
           Custom Studio
         </motion.h1>

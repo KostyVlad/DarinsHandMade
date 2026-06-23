@@ -47,7 +47,7 @@ export default function CheckoutPage() {
   if (items.length === 0 && !submitted) {
     return (
       <div className="bg-white min-h-screen flex flex-col items-center justify-center gap-8 px-8">
-        <p className="font-['Dorsa'] text-[72px] tracking-[12px] text-black text-center">Your cart is empty</p>
+        <p className="font-['Dorsa'] text-[48px] md:text-[72px] tracking-[6px] md:tracking-[12px] text-black text-center">Your cart is empty</p>
         <Link
           to="/"
           className="font-['Centaur'] text-[18px] tracking-[3px] text-black underline hover:opacity-60 transition-opacity"
@@ -62,8 +62,8 @@ export default function CheckoutPage() {
     return (
       <div className="bg-white min-h-screen flex flex-col items-center justify-center gap-8 px-8 text-center">
         <CheckCircle className="w-20 h-20 text-black/30" strokeWidth={1} />
-        <h1 className="font-['Dorsa'] text-[96px] tracking-[17px] leading-none text-black">Order Placed</h1>
-        <p className="font-['Centaur'] text-[22px] tracking-[4px] text-[#666] max-w-[560px] leading-relaxed">
+        <h1 className="font-['Dorsa'] text-[56px] md:text-[96px] tracking-[8px] md:tracking-[17px] leading-none text-black">Order Placed</h1>
+        <p className="font-['Centaur'] text-[18px] md:text-[22px] tracking-[3px] md:tracking-[4px] text-[#666] max-w-[560px] leading-relaxed">
           Thank you, {form.name}. We'll reach out to <span className="text-black">{form.email}</span> to confirm your order and arrange delivery.
         </p>
         <button
@@ -82,12 +82,12 @@ export default function CheckoutPage() {
     }`;
 
   return (
-    <div className="bg-white min-h-screen py-16 px-8">
+    <div className="bg-white min-h-screen py-16 px-6 md:px-8">
       <div className="max-w-[1200px] mx-auto">
-        <h1 className="font-['Dorsa'] text-[96px] tracking-[17.28px] leading-none text-black mb-2 text-center">
+        <h1 className="font-['Dorsa'] text-[56px] md:text-[96px] tracking-[8px] md:tracking-[17.28px] leading-none text-black mb-2 text-center">
           Checkout
         </h1>
-        <p className="font-['Centaur'] text-[18px] tracking-[3px] text-[#888] text-center mb-16">
+        <p className="font-['Centaur'] text-[16px] md:text-[18px] tracking-[3px] text-[#888] text-center mb-16">
           Fill in your details and we'll confirm your order
         </p>
 

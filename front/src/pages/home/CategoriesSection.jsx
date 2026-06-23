@@ -33,7 +33,7 @@ function CategoriesSection({ categoriesRef }) {
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 transition-colors duration-500" />
 
               <h3
-                className="absolute left-1/2 top-[38px] w-full -translate-x-1/2 px-[20px] text-center text-white text-[64px] leading-[1] tracking-[0.18em] transition-transform duration-500 group-hover:-translate-y-2 group-hover:left-1/2"
+                className="absolute left-1/2 top-[38px] w-full -translate-x-1/2 px-[20px] text-center text-white text-[48px] md:text-[64px] leading-[1] tracking-[0.18em] transition-transform duration-500 group-hover:-translate-y-2 group-hover:left-1/2"
                 style={{ fontFamily: "Dorsa, sans-serif" }}
               >
                 {item.title}

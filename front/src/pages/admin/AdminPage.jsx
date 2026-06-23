@@ -129,16 +129,16 @@ export default function AdminPage({ token }) {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-black text-white py-12 px-8 text-center">
-        <h1 className="font-['Dorsa'] text-[72px] md:text-[110px] tracking-[14px] leading-none">
+      <div className="bg-black text-white py-12 px-6 md:px-8 text-center">
+        <h1 className="font-['Dorsa'] text-[44px] sm:text-[64px] md:text-[110px] tracking-[8px] md:tracking-[14px] leading-none">
           Manager Studio
         </h1>
-        <p className="font-['Centaur'] text-[15px] tracking-[4px] text-white/70 uppercase mt-2">
+        <p className="font-['Centaur'] text-[13px] md:text-[15px] tracking-[4px] text-white/70 uppercase mt-2">
           Add, edit and remove bags & bracelets
         </p>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 items-start">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 items-start">
         <form onSubmit={handleSubmit} className="lg:sticky lg:top-8 border border-black/10 p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="font-['Dorsa'] text-[34px] tracking-[3px] leading-none">

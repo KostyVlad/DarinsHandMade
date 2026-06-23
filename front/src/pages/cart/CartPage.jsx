@@ -8,13 +8,13 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="bg-white min-h-screen py-20 px-8">
+      <div className="bg-white min-h-screen py-20 px-6 md:px-8">
         <div className="max-w-[1200px] mx-auto text-center">
           <ShoppingBag className="w-24 h-24 mx-auto mb-8 text-black/20" strokeWidth={1} />
-          <h1 className="font-['Dorsa:Regular',sans-serif] text-[120px] tracking-[21.6px] leading-none text-black mb-8">
+          <h1 className="font-['Dorsa:Regular',sans-serif] text-[52px] sm:text-[80px] md:text-[120px] tracking-[6px] md:tracking-[21.6px] leading-none text-black mb-8">
             Your Cart is Empty
           </h1>
-          <p className="font-['Centaur:Regular',sans-serif] text-[#666] text-[24px] tracking-[4.32px] mb-12">
+          <p className="font-['Centaur:Regular',sans-serif] text-[#666] text-[18px] md:text-[24px] tracking-[3px] md:tracking-[4.32px] mb-12">
             Discover our handmade treasures and add some beauty to your collection
           </p>
           <Link
@@ -29,12 +29,12 @@ export default function CartPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen py-16 px-8">
+    <div className="bg-white min-h-screen py-16 px-6 md:px-8">
       <div className="max-w-[1400px] mx-auto">
-        <h1 className="font-['Dorsa:Regular',sans-serif] text-[120px] tracking-[21.6px] leading-none text-black mb-4 text-center">
+        <h1 className="font-['Dorsa:Regular',sans-serif] text-[56px] sm:text-[80px] md:text-[120px] tracking-[6px] md:tracking-[21.6px] leading-none text-black mb-4 text-center">
           Shopping Cart
         </h1>
-        <p className="font-['Centaur:Regular',sans-serif] text-[#666] text-[20px] tracking-[3.6px] text-center mb-12">
+        <p className="font-['Centaur:Regular',sans-serif] text-[#666] text-[18px] md:text-[20px] tracking-[3.6px] text-center mb-12">
           {items.length} {items.length === 1 ? 'item' : 'items'} in your cart
         </p>
 
@@ -44,10 +44,10 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="border border-black/10 p-6 flex gap-6 hover:border-black/30 transition-colors"
+                className="border border-black/10 p-4 md:p-6 flex flex-col sm:flex-row gap-4 md:gap-6 hover:border-black/30 transition-colors"
               >
 
-                <div className="w-32 h-32 bg-[#fafafa] flex-shrink-0 overflow-hidden">
+                <div className="w-full h-48 sm:w-32 sm:h-32 bg-[#fafafa] flex-shrink-0 overflow-hidden">
                   <img
                     src={item.image}
                     alt={item.name}
