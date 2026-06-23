@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { ArrowLeft } from "lucide-react";
+import { API } from "../../api";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -14,7 +15,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`);
+        const res = await fetch(`${API}/api/products/${id}`);
         const data = await res.json();
         if (data.success && data.data) {
           setProduct(data.data);
@@ -72,7 +73,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
           <div className="aspect-square bg-[#fafafa] overflow-hidden border border-black/10">
             <img
-              src={`http://localhost:5000/${product.file_name.replace(/^\//, "")}`}
+              src={`${API}/${product.file_name.replace(/^\//, "")}`}
               alt={product.model_name}
               className="w-full h-full object-cover"
               onError={(e) => { e.target.style.display = "none"; }}

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { API } from "../api";
 
 const CartContext = createContext();
-const API = "http://localhost:5000";
 const GUEST_KEY = "guestCart";
 
 function loadGuestCart() {

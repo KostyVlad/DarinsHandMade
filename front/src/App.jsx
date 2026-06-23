@@ -15,8 +15,7 @@ import CartPage from "./pages/cart/CartPage";
 import ProductDetailPage from "./pages/product/ProductDetailPage";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
 import AdminPage from "./pages/admin/AdminPage";
-
-const API = "http://localhost:5000";
+import { API } from "./api";
 
 function readUser() {
   try {

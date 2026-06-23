@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 
-const API = "http://localhost:5000";
+import { API } from "../../api";
 
 export default function LoginPage({ setToken, setUser }) {
 

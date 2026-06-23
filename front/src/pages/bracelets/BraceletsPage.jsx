@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { API } from "../../api";
 
 export default function BraceletsPage() {
     const [bracelets, setBracelets] = useState([]);
@@ -11,7 +12,7 @@ export default function BraceletsPage() {
     useEffect(() => {
         const fetchBracelets = async () => {
             try {
-                const res = await fetch("http://localhost:5000/api/products");
+                const res = await fetch(`${API}/api/products`);
                 const data = await res.json();
 
                 const braceletsOnly = (data.data || []).filter(
@@ -75,7 +76,7 @@ export default function BraceletsPage() {
                                     <div key={item._id} className="group flex flex-col h-full">
                                         <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                                             <img
-                                                src={`http://localhost:5000/${item.file_name.replace(/^\//, '')}`}
+                                                src={`${API}/${item.file_name.replace(/^\//, '')}`}
                                                 alt={item.model_name}
                                                 className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                                             />

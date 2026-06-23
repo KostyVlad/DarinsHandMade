@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { API } from "../../api";
 
 export default function BeadedBagsPage() {
   const [bags, setBags] = useState([]);
@@ -11,7 +12,7 @@ export default function BeadedBagsPage() {
   useEffect(() => {
     const fetchBags = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/products");
+        const res = await fetch(`${API}/api/products`);
         const data = await res.json();
 
         const bagsOnly = (data.data || []).filter(
@@ -75,7 +76,7 @@ export default function BeadedBagsPage() {
                   <div key={bag._id} className="group flex flex-col h-full">
                     <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                       <img
-                        src={`http://localhost:5000/${bag.file_name.replace(/^\//, '')}`}
+                        src={`${API}/${bag.file_name.replace(/^\//, '')}`}
                         alt={bag.model_name}
                         className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                         onError={(e) => {
