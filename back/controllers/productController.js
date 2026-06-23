@@ -17,6 +17,13 @@ const toArray = (value) => {
   return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
 };
 
+// Empty/blank -> null (untracked, unlimited). A number -> tracked stock (>= 0).
+const parseStock = (value) => {
+  if (value === undefined || value === null || String(value).trim() === '') return null;
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) ? Math.max(0, n) : null;
+};
+
 const filePathFromUpload = (file) =>
   path.join('uploads', file.filename).replace(/\\/g, '/');
 
@@ -38,6 +45,7 @@ const createProduct = async (req, res) => {
       color_palette: toArray(req.body.color_palette),
       details: toArray(req.body.details),
       style: toArray(req.body.style),
+      stock: parseStock(req.body.stock),
     });
     res.status(201).json({ success: true, data: p });
   } catch (err) {
@@ -77,6 +85,7 @@ const updateProduct = async (req, res) => {
     if (req.body.color_palette !== undefined) update.color_palette = toArray(req.body.color_palette);
     if (req.body.details !== undefined) update.details = toArray(req.body.details);
     if (req.body.style !== undefined) update.style = toArray(req.body.style);
+    if (req.body.stock !== undefined) update.stock = parseStock(req.body.stock);
 
     let oldImage = null;
     if (req.file) {

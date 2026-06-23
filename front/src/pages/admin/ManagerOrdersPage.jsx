@@ -17,6 +17,15 @@ const STATUS_STYLE = {
 const label = (s) => s.replace("_", " ");
 const money = (n) => `$${Number(n || 0).toFixed(2)}`;
 
+function StatCard({ label, value }) {
+  return (
+    <div className="border border-black/10 p-6">
+      <p className="text-black/40 uppercase text-[11px] tracking-[2px] mb-2">{label}</p>
+      <p className="font-['Dorsa'] text-[40px] tracking-[2px] leading-none text-black">{value}</p>
+    </div>
+  );
+}
+
 export default function ManagerOrdersPage({ token }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +33,8 @@ export default function ManagerOrdersPage({ token }) {
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState(null);
   const [message, setMessage] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [period, setPeriod] = useState("30");
 
   const load = async () => {
     setLoading(true);
@@ -47,6 +58,24 @@ export default function ManagerOrdersPage({ token }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
+
+  const loadStats = async () => {
+    try {
+      const qs = period === "all" ? "" : `?days=${period}`;
+      const res = await fetch(`${API}/api/orders/stats${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setStats(data.data);
+    } catch {
+      /* non-critical */
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
   const changeStatus = async (id, status) => {
     setMessage(null);
@@ -77,6 +106,45 @@ export default function ManagerOrdersPage({ token }) {
       </div>
 
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-10">
+        {stats && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-['Perpetua_Titling_MT'] text-[14px] tracking-[2px] uppercase">Sales overview</h2>
+              <div className="flex gap-2">
+                {[["7", "7 days"], ["30", "30 days"], ["all", "All time"]].map(([v, l]) => (
+                  <button
+                    key={v}
+                    onClick={() => setPeriod(v)}
+                    className={`px-3 py-1 text-[11px] tracking-[1px] uppercase border cursor-pointer ${
+                      period === v ? "border-black bg-black text-white" : "border-black/20 text-black/50 hover:border-black/50"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <StatCard label="Total Sales" value={money(stats.revenue)} />
+              <StatCard label="Orders" value={stats.orders} />
+              <StatCard label="Avg Order" value={money(stats.avgOrder)} />
+            </div>
+
+            {stats.topProducts?.length > 0 && (
+              <div className="border border-black/10 p-5">
+                <p className="text-black/40 uppercase text-[11px] tracking-[2px] mb-3">Top products</p>
+                {stats.topProducts.map((p, i) => (
+                  <div key={i} className="flex justify-between text-[14px] font-['Centaur'] py-1.5 border-b border-black/5 last:border-0">
+                    <span>{i + 1}. {p._id}</span>
+                    <span className="text-black/60">{p.qty} sold · {money(p.revenue)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <Link
             to="/admin"

@@ -6,6 +6,7 @@ const {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  getStats,
 } = require('../controllers/orderController');
 const protect = require('../middleware/authMiddleware');
 const restrictTo = require('../middleware/roleMiddleware');
@@ -18,6 +19,7 @@ router.get('/by-session/:sessionId', getOrderBySession);
 
 // Manager-only (specific routes before '/:id')
 router.get('/', manager, getAllOrders);
+router.get('/stats', manager, getStats);
 router.patch('/:id/status', manager, updateOrderStatus);
 router.get('/:id', manager, getOrderById);
 

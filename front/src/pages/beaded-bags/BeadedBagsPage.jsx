@@ -71,6 +71,7 @@ export default function BeadedBagsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {bags.map((bag) => {
                 const isInCart = items.some((cartItem) => cartItem.id === bag._id);
+                const outOfStock = bag.stock === 0;
 
                 return (
                   <div key={bag._id} className="group flex flex-col h-full">
@@ -84,6 +85,17 @@ export default function BeadedBagsPage() {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                      {typeof bag.stock === "number" && (
+                        <span className={`absolute top-3 left-3 px-3 py-1 text-[11px] tracking-[1.5px] uppercase font-['Perpetua_Titling_MT'] ${
+                          bag.stock === 0
+                            ? "bg-red-600 text-white"
+                            : bag.stock <= 3
+                              ? "bg-amber-500 text-white"
+                              : "bg-white/90 text-black"
+                        }`}>
+                          {bag.stock === 0 ? "Sold out" : bag.stock <= 3 ? `Only ${bag.stock} left` : `${bag.stock} in stock`}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-start justify-between mb-3">
@@ -112,13 +124,16 @@ export default function BeadedBagsPage() {
                       </span>
 
                       <button
-                        onClick={() => !isInCart && addToCart(bag)}
-                        className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${isInCart
-                          ? "bg-white text-black border-black/30 cursor-default"
-                          : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
+                        onClick={() => !isInCart && !outOfStock && addToCart(bag)}
+                        disabled={outOfStock}
+                        className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${outOfStock
+                          ? "bg-white text-black/40 border-black/15 cursor-not-allowed"
+                          : isInCart
+                            ? "bg-white text-black border-black/30 cursor-default"
+                            : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
                           }`}
                       >
-                        {isInCart ? "In Cart" : "Add to Cart"}
+                        {outOfStock ? "Out of Stock" : isInCart ? "In Cart" : "Add to Cart"}
                       </button>
                     </div>
                   </div>

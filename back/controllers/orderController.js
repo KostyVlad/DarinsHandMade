@@ -31,6 +31,7 @@ const userIdFromHeader = (req) => {
 // client's), custom-studio items keep their submitted price.
 const buildOrderItems = async (rawItems) => {
   const items = [];
+  let error = null;
   for (const it of rawItems || []) {
     const quantity = Math.max(1, parseInt(it.quantity, 10) || 1);
     let product = null;
@@ -38,6 +39,14 @@ const buildOrderItems = async (rawItems) => {
       product = await Product.findById(it.id);
     }
     if (product) {
+      // stock === null means untracked (unlimited); a number is enforced.
+      if (typeof product.stock === 'number') {
+        if (product.stock <= 0) {
+          error = error || `"${product.model_name}" is out of stock`;
+        } else if (quantity > product.stock) {
+          error = error || `Only ${product.stock} of "${product.model_name}" left in stock`;
+        }
+      }
       items.push({
         product: product._id,
         name: product.model_name,
@@ -59,7 +68,7 @@ const buildOrderItems = async (rawItems) => {
       });
     }
   }
-  return items;
+  return { items, error };
 };
 
 const createCheckoutSession = async (req, res) => {
@@ -77,7 +86,10 @@ const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ success: false, msg: 'Cart is empty' });
     }
 
-    const items = await buildOrderItems(rawItems);
+    const { items, error: stockError } = await buildOrderItems(rawItems);
+    if (stockError) {
+      return res.status(400).json({ success: false, msg: stockError });
+    }
     const subtotal = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
     const total = subtotal; // free shipping for now
 
@@ -221,6 +233,18 @@ const stripeWebhook = async (req, res) => {
         order.payment.paidAt = new Date();
         await order.save();
 
+        // Decrement stock for tracked catalog items. Untracked products have
+        // stock=null which never matches { $gte }, so they're left alone; the
+        // $gte guard also prevents stock going negative.
+        for (const it of order.items) {
+          if (it.product) {
+            await Product.updateOne(
+              { _id: it.product, stock: { $gte: it.quantity } },
+              { $inc: { stock: -it.quantity } }
+            );
+          }
+        }
+
         // Emails must not break the webhook — Stripe needs a 200 back.
         try {
           await sendCustomerReceipt(order);
@@ -238,6 +262,58 @@ const stripeWebhook = async (req, res) => {
 };
 
 const ALLOWED_STATUS = ['pending', 'paid', 'in_production', 'shipped', 'completed', 'cancelled'];
+// Statuses that count as real revenue (paid and beyond; excludes pending/cancelled).
+const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
+
+// Manager: sales analytics. Optional ?days=7|30 limits the period.
+const getStats = async (req, res) => {
+  try {
+    const days = Number(req.query.days);
+    const match = { status: { $in: PAID_STATUSES } };
+    if (days > 0) {
+      match.createdAt = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
+    }
+
+    const [totals] = await Order.aggregate([
+      { $match: match },
+      { $group: { _id: null, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
+    ]);
+
+    const byStatus = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+
+    const topProducts = await Order.aggregate([
+      { $match: match },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.name',
+          qty: { $sum: '$items.quantity' },
+          revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+        },
+      },
+      { $sort: { qty: -1 } },
+      { $limit: 5 },
+    ]);
+
+    const revenue = totals?.revenue || 0;
+    const orders = totals?.count || 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        revenue,
+        orders,
+        avgOrder: orders ? revenue / orders : 0,
+        byStatus,
+        topProducts,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: err.message });
+  }
+};
 
 // Manager: list orders with optional status / search filters.
 const getAllOrders = async (req, res) => {
@@ -308,4 +384,5 @@ module.exports = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  getStats,
 };

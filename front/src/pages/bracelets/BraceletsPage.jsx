@@ -71,6 +71,7 @@ export default function BraceletsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                             {bracelets.map((item) => {
                                 const isInCart = items.some((cartItem) => cartItem.id === item._id);
+                                const outOfStock = item.stock === 0;
 
                                 return (
                                     <div key={item._id} className="group flex flex-col h-full">
@@ -81,6 +82,17 @@ export default function BraceletsPage() {
                                                 className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                                            {typeof item.stock === "number" && (
+                                                <span className={`absolute top-3 left-3 px-3 py-1 text-[11px] tracking-[1.5px] uppercase font-['Perpetua_Titling_MT'] ${
+                                                    item.stock === 0
+                                                        ? "bg-red-600 text-white"
+                                                        : item.stock <= 3
+                                                            ? "bg-amber-500 text-white"
+                                                            : "bg-white/90 text-black"
+                                                }`}>
+                                                    {item.stock === 0 ? "Sold out" : item.stock <= 3 ? `Only ${item.stock} left` : `${item.stock} in stock`}
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="flex items-start justify-between mb-3">
@@ -109,13 +121,16 @@ export default function BraceletsPage() {
                                             </span>
 
                                             <button
-                                                onClick={() => !isInCart && addToCart(item)}
-                                                className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${isInCart
-                                                    ? "bg-white text-black border-black/30 cursor-default"
-                                                    : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
+                                                onClick={() => !isInCart && !outOfStock && addToCart(item)}
+                                                disabled={outOfStock}
+                                                className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${outOfStock
+                                                    ? "bg-white text-black/40 border-black/15 cursor-not-allowed"
+                                                    : isInCart
+                                                        ? "bg-white text-black border-black/30 cursor-default"
+                                                        : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
                                                     }`}
                                             >
-                                                {isInCart ? "In Cart" : "Add to Cart"}
+                                                {outOfStock ? "Out of Stock" : isInCart ? "In Cart" : "Add to Cart"}
                                             </button>
                                         </div>
                                     </div>

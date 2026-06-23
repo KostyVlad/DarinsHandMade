@@ -7,7 +7,9 @@ const productSchema = new mongoose.Schema({
     details: { type: [String], default: [] },
     style: { type: [String], default: [] },
     category: { type: String, required: true, enum: ['bags', 'bracelets'] },
-    price: Number
+    price: Number,
+    // null = stock not tracked (unlimited); a number = units available to buy.
+    stock: { type: Number, default: null, min: 0 }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

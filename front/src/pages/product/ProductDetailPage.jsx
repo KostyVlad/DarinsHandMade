@@ -54,6 +54,7 @@ export default function ProductDetailPage() {
   }
 
   const isInCart = items.some((item) => item.id === product._id);
+  const outOfStock = product.stock === 0;
   const backPath = product.category === "bracelets" ? "/bracelets" : "/beaded-bags";
   const backLabel = product.category === "bracelets" ? "Bracelets" : "Beaded Bags";
 
@@ -122,15 +123,39 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
+            {typeof product.stock === "number" && (
+              <div className="mb-4 flex items-center gap-2">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    outOfStock ? "bg-red-600" : product.stock <= 3 ? "bg-amber-500" : "bg-green-600"
+                  }`}
+                />
+                <span
+                  className={`font-['Centaur'] text-[15px] tracking-[2px] ${
+                    outOfStock ? "text-red-600" : product.stock <= 3 ? "text-amber-600" : "text-black/70"
+                  }`}
+                >
+                  {outOfStock
+                    ? "Currently out of stock"
+                    : product.stock <= 3
+                      ? `Hurry — only ${product.stock} left in stock`
+                      : `${product.stock} in stock`}
+                </span>
+              </div>
+            )}
+
             <button
-              onClick={() => !isInCart && addToCart(product)}
+              onClick={() => !isInCart && !outOfStock && addToCart(product)}
+              disabled={outOfStock}
               className={`w-full font-['Perpetua_Titling_MT'] text-[16px] tracking-[2.88px] py-5 rounded-full transition-colors border ${
-                isInCart
-                  ? "bg-white text-black border-black/30 cursor-default"
-                  : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
+                outOfStock
+                  ? "bg-white text-black/40 border-black/15 cursor-not-allowed"
+                  : isInCart
+                    ? "bg-white text-black border-black/30 cursor-default"
+                    : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
               }`}
             >
-              {isInCart ? "Added to Cart" : "Add to Cart"}
+              {outOfStock ? "Out of Stock" : isInCart ? "Added to Cart" : "Add to Cart"}
             </button>
 
             <p className="font-['Centaur'] text-[14px] tracking-[2.52px] text-[#999] text-center mt-4">

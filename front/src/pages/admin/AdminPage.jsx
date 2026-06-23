@@ -9,6 +9,7 @@ const EMPTY = {
   color_palette: "",
   details: "",
   style: "",
+  stock: "",
 };
 
 const imgUrl = (file_name) => `${API}/${String(file_name).replace(/^\//, "")}`;
@@ -57,6 +58,7 @@ export default function AdminPage({ token }) {
       color_palette: (p.color_palette || []).join(", "),
       details: (p.details || []).join(", "),
       style: (p.style || []).join(", "),
+      stock: p.stock ?? "",
     });
     setImageFile(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -78,6 +80,7 @@ export default function AdminPage({ token }) {
     fd.append("color_palette", form.color_palette);
     fd.append("details", form.details);
     fd.append("style", form.style);
+    fd.append("stock", form.stock);
     if (imageFile) fd.append("image", imageFile);
 
     setSaving(true);
@@ -200,6 +203,18 @@ export default function AdminPage({ token }) {
           </div>
 
           <div>
+            <label className={labelClass}>Stock (units available — leave empty = unlimited)</label>
+            <input
+              className={inputClass}
+              type="number"
+              min="0"
+              value={form.stock}
+              onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+              placeholder="e.g. 5 — empty means unlimited"
+            />
+          </div>
+
+          <div>
             <label className={labelClass}>Colors (comma-separated)</label>
             <input
               className={inputClass}
@@ -293,6 +308,15 @@ export default function AdminPage({ token }) {
                     <p className="font-['Perpetua_Titling_MT'] text-[12px] tracking-[1.5px] uppercase">{p.model_name}</p>
                     <p className="font-['Centaur'] text-[13px] tracking-[1px] text-black/50 capitalize">
                       {p.category} · ${p.price}
+                    </p>
+                    <p className="font-['Centaur'] text-[12px] tracking-[1px] mt-0.5">
+                      {p.stock === null || p.stock === undefined ? (
+                        <span className="text-black/40">Unlimited stock</span>
+                      ) : p.stock === 0 ? (
+                        <span className="text-red-600">Out of stock</span>
+                      ) : (
+                        <span className="text-black/60">{p.stock} in stock</span>
+                      )}
                     </p>
                     <div className="mt-3 flex gap-2">
                       <button
