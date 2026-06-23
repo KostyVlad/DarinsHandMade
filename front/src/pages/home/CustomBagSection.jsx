@@ -24,7 +24,7 @@ function CustomBagSection() {
     <section className="w-full bg-black">
       <div className="mx-auto flex flex-col md:flex-row items-center md:justify-between max-w-[1512px] px-[20px] md:px-[50px] py-[40px]">
         <motion.div
-          className="w-full md:w-[42%] flex flex-col items-center md:items-start text-center md:text-left"
+          className="w-full md:w-[42%] text-center md:text-left"
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -45,7 +45,7 @@ function CustomBagSection() {
             accessory that fits you perfectly.
           </p>
 
-          <motion.div className="mt-[42px]">
+          <motion.div className="mt-[42px] text-center">
             <Link
               to="/custom-studio"
               onMouseEnter={() => setCreateHovered(true)}
