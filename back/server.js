@@ -17,6 +17,8 @@ const { stripeWebhook } = require('./controllers/orderController');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(cors());
 
 app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
