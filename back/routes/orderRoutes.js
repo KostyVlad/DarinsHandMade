@@ -13,11 +13,9 @@ const restrictTo = require('../middleware/roleMiddleware');
 
 const manager = [protect, restrictTo('manager', 'admin')];
 
-// Public / customer
 router.post('/checkout-session', createCheckoutSession);
 router.get('/by-session/:sessionId', getOrderBySession);
 
-// Manager-only (specific routes before '/:id')
 router.get('/', manager, getAllOrders);
 router.get('/stats', manager, getStats);
 router.patch('/:id/status', manager, updateOrderStatus);

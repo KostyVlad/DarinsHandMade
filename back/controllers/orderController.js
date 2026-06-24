@@ -14,7 +14,6 @@ const genOrderNumber = () => {
   return `DH-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
 };
 
-// Optional auth: link the order to a user if a valid token is present, else guest.
 const userIdFromHeader = (req) => {
   try {
     const auth = req.headers.authorization;
@@ -22,13 +21,11 @@ const userIdFromHeader = (req) => {
       return jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET).id;
     }
   } catch {
-    /* invalid token -> treat as guest */
+    return null;
   }
   return null;
 };
 
-// Rebuild line items server-side. Catalog products use the DB price (never the
-// client's), custom-studio items keep their submitted price.
 const buildOrderItems = async (rawItems) => {
   const items = [];
   let error = null;
@@ -39,7 +36,6 @@ const buildOrderItems = async (rawItems) => {
       product = await Product.findById(it.id);
     }
     if (product) {
-      // stock === null means untracked (unlimited); a number is enforced.
       if (typeof product.stock === 'number') {
         if (product.stock <= 0) {
           error = error || `"${product.model_name}" is out of stock`;
@@ -205,7 +201,6 @@ async function sendManagerReport(order) {
   await sendMail({ to, subject: `New order ${order.orderNumber} — ${money(order.total)}`, html });
 }
 
-// Stripe calls this with a raw body (see express.raw mount in server.js).
 const stripeWebhook = async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
     return res.status(501).send('Stripe webhook not configured');
@@ -226,16 +221,12 @@ const stripeWebhook = async (req, res) => {
     const session = event.data.object;
     try {
       const order = await Order.findById(session.metadata?.orderId);
-      // Idempotent: only act on a still-pending order.
       if (order && order.status === 'pending') {
         order.status = 'paid';
         order.payment.paymentIntentId = session.payment_intent;
         order.payment.paidAt = new Date();
         await order.save();
 
-        // Decrement stock for tracked catalog items. Untracked products have
-        // stock=null which never matches { $gte }, so they're left alone; the
-        // $gte guard also prevents stock going negative.
         for (const it of order.items) {
           if (it.product) {
             await Product.updateOne(
@@ -245,7 +236,6 @@ const stripeWebhook = async (req, res) => {
           }
         }
 
-        // Emails must not break the webhook — Stripe needs a 200 back.
         try {
           await sendCustomerReceipt(order);
           await sendManagerReport(order);
@@ -262,10 +252,8 @@ const stripeWebhook = async (req, res) => {
 };
 
 const ALLOWED_STATUS = ['pending', 'paid', 'in_production', 'shipped', 'completed', 'cancelled'];
-// Statuses that count as real revenue (paid and beyond; excludes pending/cancelled).
 const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
 
-// Manager: sales analytics. Optional ?days=7|30 limits the period.
 const getStats = async (req, res) => {
   try {
     const days = Number(req.query.days);
@@ -315,7 +303,6 @@ const getStats = async (req, res) => {
   }
 };
 
-// Manager: list orders with optional status / search filters.
 const getAllOrders = async (req, res) => {
   try {
     const { status, search } = req.query;
@@ -332,7 +319,6 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-// Manager: full order detail.
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -343,7 +329,6 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// Manager: move an order along its lifecycle.
 const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -358,7 +343,6 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Lightweight summary for the order-success page (non-sensitive fields only).
 const getOrderBySession = async (req, res) => {
   try {
     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });

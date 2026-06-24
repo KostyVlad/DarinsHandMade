@@ -17,7 +17,6 @@ const toArray = (value) => {
   return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
 };
 
-// Empty/blank -> null (untracked, unlimited). A number -> tracked stock (>= 0).
 const parseStock = (value) => {
   if (value === undefined || value === null || String(value).trim() === '') return null;
   const n = Math.floor(Number(value));

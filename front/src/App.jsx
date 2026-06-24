@@ -68,39 +68,39 @@ function App() {
   return (
     <CartProvider token={token}>
       <BrowserRouter>
-          <Header token={token} setToken={setToken} setUser={setUser} user={user} />
+        <Header token={token} setToken={setToken} setUser={setUser} user={user} />
 
-          <div>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/beaded-bags" element={<BeadedBagsPage />} />
-              <Route path="/bracelets" element={<BraceletsPage />} />
+        <div>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/beaded-bags" element={<BeadedBagsPage />} />
+            <Route path="/bracelets" element={<BraceletsPage />} />
 
-              <Route path="/custom-studio" element={<CustomStudioPage />} />
-              <Route path="/login" element={<LoginPage setToken={setToken} setUser={setUser} />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/order-success" element={<OrderSuccessPage />} />
-              <Route path="/products/:id" element={<ProductDetailPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-              <Route
-                path="/admin"
-                element={isManager ? <AdminPage token={token} /> : <Navigate to="/login" replace />}
-              />
-              <Route
-                path="/admin/orders"
-                element={isManager ? <ManagerOrdersPage token={token} /> : <Navigate to="/login" replace />}
-              />
-            </Routes>
-          </div>
+            <Route path="/custom-studio" element={<CustomStudioPage />} />
+            <Route path="/login" element={<LoginPage setToken={setToken} setUser={setUser} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/order-success" element={<OrderSuccessPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+            <Route
+              path="/admin"
+              element={isManager ? <AdminPage token={token} /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/admin/orders"
+              element={isManager ? <ManagerOrdersPage token={token} /> : <Navigate to="/login" replace />}
+            />
+          </Routes>
+        </div>
 
-          <Footer />
-        </BrowserRouter>
-      </CartProvider>
+        <Footer />
+      </BrowserRouter>
+    </CartProvider>
   );
 }
 

@@ -8,6 +8,9 @@ const mailer = process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD
   ? nodemailer.createTransport({
       service: 'gmail',
       auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     })
   : null;
 
@@ -15,8 +18,6 @@ const RESET_FROM = `DARIN'S HANDMADE <${process.env.GMAIL_USER || 'no-reply@exam
 
 const hashToken = (raw) => crypto.createHash('sha256').update(raw).digest('hex');
 
-// A token's issue time = its expiry minus the 1h lifetime. True if a reset
-// email was already sent to this user in the last 2 minutes (anti-flood).
 const sentRecently = (user) => {
   if (!user.resetPasswordExpires) return false;
   const issuedAt = new Date(user.resetPasswordExpires).getTime() - 60 * 60 * 1000;
@@ -69,9 +70,6 @@ const forgotPassword = async (req, res) => {
     const user = await User.findOne({ email: String(email).trim().toLowerCase() })
       .select('+resetPasswordExpires');
 
-    // Only act if the user exists AND we haven't just emailed them (anti-flood),
-    // but always return the same response so the endpoint can't be used to
-    // discover which emails are registered.
     if (user && !sentRecently(user)) {
       const rawToken = crypto.randomBytes(32).toString('hex');
       user.resetPasswordToken = hashToken(rawToken);
@@ -82,25 +80,28 @@ const forgotPassword = async (req, res) => {
       const resetUrl = `${base}/reset-password?token=${rawToken}`;
 
       if (mailer) {
-        await mailer.sendMail({
-          from: RESET_FROM,
-          to: user.email,
-          subject: "Reset your DARIN'S HANDMADE password",
-          html: `
-            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#111">
-              <h2 style="let-spacing:2px">DARIN'S HANDMADE</h2>
-              <p>We received a request to reset your password.</p>
-              <p>Click the button below to choose a new one. This link expires in 1 hour.</p>
-              <p style="margin:28px 0">
-                <a href="${resetUrl}" style="background:#050000;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;display:inline-block">Reset password</a>
-              </p>
-              <p style="color:#666;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
-              <p style="color:#999;font-size:12px;word-break:break-all">${resetUrl}</p>
-            </div>`,
-        });
+        try {
+          await mailer.sendMail({
+            from: RESET_FROM,
+            to: user.email,
+            subject: "Reset your DARIN'S HANDMADE password",
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#111">
+                <h2 style="letter-spacing:2px">DARIN'S HANDMADE</h2>
+                <p>We received a request to reset your password.</p>
+                <p>Click the button below to choose a new one. This link expires in 1 hour.</p>
+                <p style="margin:28px 0">
+                  <a href="${resetUrl}" style="background:#050000;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;display:inline-block">Reset password</a>
+                </p>
+                <p style="color:#666;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+                <p style="color:#999;font-size:12px;word-break:break-all">${resetUrl}</p>
+              </div>`,
+          });
+        } catch (mailErr) {
+          console.error('Failed to send reset email:', mailErr.message);
+        }
       } else {
-        // No email provider configured (e.g. local dev) — log the link instead.
-        console.log('Password reset link:', resetUrl);
+        console.log('Password reset link (no SMTP configured):', resetUrl);
       }
     }
 

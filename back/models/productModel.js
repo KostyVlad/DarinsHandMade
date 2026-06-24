@@ -8,7 +8,6 @@ const productSchema = new mongoose.Schema({
     style: { type: [String], default: [] },
     category: { type: String, required: true, enum: ['bags', 'bracelets'] },
     price: Number,
-    // null = stock not tracked (unlimited); a number = units available to buy.
     stock: { type: Number, default: null, min: 0 }
 }, { timestamps: true });
 

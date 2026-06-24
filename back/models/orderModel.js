@@ -7,7 +7,6 @@ const orderItemSchema = new mongoose.Schema({
   image: { type: String, default: '' },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
-  // Custom Studio spec (null for catalog products).
   custom: {
     size: String,
     strap: String,

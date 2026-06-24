@@ -19,8 +19,6 @@ const app = express();
 
 app.use(cors());
 
-// Stripe webhook needs the raw request body for signature verification, so it
-// must be registered before the JSON body parser.
 app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
 app.use(express.json());
@@ -47,8 +45,6 @@ app.use('/api/auth/signin', authLimiter);
 app.use('/api/auth/signup', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
 
-// Password-reset sends an email per request, so it gets a stricter limiter that
-// counts every hit (no skipSuccessfulRequests) to protect the email quota.
 const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
