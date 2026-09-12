@@ -1,9 +1,10 @@
+import React from 'react';
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import rectangleWithBag from "./assets/RectangleWithbag.png";
 import rectangleBracelets from "./assets/RectangleBracelets.png";
 
-function CategoriesSection({ categoriesRef }) {
+const CategoriesSection = ({ categoriesRef }) => {
   const categories = [
     { title: "Beaded Bags", image: rectangleWithBag, link: "/beaded-bags" },
     { title: "Bracelets",   image: rectangleBracelets, link: "/bracelets" },
@@ -54,6 +55,6 @@ function CategoriesSection({ categoriesRef }) {
       </div>
     </section>
   );
-}
+};
 
 export default CategoriesSection;

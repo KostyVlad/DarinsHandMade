@@ -1,33 +1,27 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api, { imageUrl } from '../../api';
+import { useCart } from '../../context/CartContext';
 
-export default function BeadedBagsPage() {
+const BeadedBagsPage = () => {
   const [bags, setBags] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { items, addToCart } = useCart();
 
+  // Runs once when the page opens: bring the catalog and keep only the bags.
   useEffect(() => {
-    const fetchBags = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/products");
-        const data = await res.json();
-
-        const bagsOnly = (data.data || []).filter(
-          (product) => product.category === "bags"
-        );
-
+    api
+      .get('/api/products')
+      .then((response) => {
+        const bagsOnly = response.data.data.filter((product) => product.category === 'bags');
         setBags(bagsOnly);
-      } catch (err) {
-        console.error("Error loading products:", err);
-        setBags([]);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    fetchBags();
+      })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -75,7 +69,7 @@ export default function BeadedBagsPage() {
                   <div key={bag._id} className="group flex flex-col h-full">
                     <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                       <img
-                        src={`http://localhost:5000/${bag.file_name.replace(/^\//, '')}`}
+                        src={imageUrl(bag.file_name)}
                         alt={bag.model_name}
                         className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                         onError={(e) => {
@@ -163,4 +157,6 @@ export default function BeadedBagsPage() {
       </section>
     </div>
   );
-}
+};
+
+export default BeadedBagsPage;

@@ -1,21 +1,30 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import { motion } from "framer-motion";
-import bgImage from "./BACKGROUDN.png";
+import bgImage from "./background.png";
 
 // Crystal-bead tones to match the beaded bags — cobalt, royal, cyan, aqua, clear, lilac sheen.
 const BEAD_COLORS = ["#2F6BFF", "#1B3FD1", "#36C5F0", "#7FE3FF", "#BFEAFF", "#E8F7FF", "#9B8CFF"];
 
-export default function AboutPage() {
+const BEAD_COUNT = 44;
+const BEAD_SIZE_PX = { min: 8, max: 22 };
+const FALL_SECONDS = { min: 6, max: 12 };
+const SWAY_SECONDS = { min: 3, max: 6 };
+const MAX_START_DELAY_S = 8;
+
+// Random value in [min, max).
+const rand = (min, max) => min + Math.random() * (max - min);
+
+const AboutPage = () => {
   // Generate the beads once, on first render (random values, so not derived from props/state).
   const [beads] = useState(() =>
-    Array.from({ length: 44 }).map((_, i) => ({
+    Array.from({ length: BEAD_COUNT }).map((_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      duration: Math.random() * 6 + 6,
-      delay: Math.random() * 8,
-      size: Math.random() * 14 + 8,
-      sway: Math.random() * 3 + 3,
-      color: BEAD_COLORS[Math.floor(Math.random() * BEAD_COLORS.length)],
+      left: rand(0, 100), // % across the screen
+      duration: rand(FALL_SECONDS.min, FALL_SECONDS.max),
+      delay: rand(0, MAX_START_DELAY_S),
+      size: rand(BEAD_SIZE_PX.min, BEAD_SIZE_PX.max),
+      sway: rand(SWAY_SECONDS.min, SWAY_SECONDS.max),
+      color: BEAD_COLORS[Math.floor(rand(0, BEAD_COLORS.length))],
     }))
   );
 
@@ -178,4 +187,6 @@ export default function AboutPage() {
       </div>
     </div>
   );
-}
+};
+
+export default AboutPage;

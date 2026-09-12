@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
@@ -54,18 +54,18 @@ const STRAPS = [
 
 // Strap photos only exist for mini/small; other sizes fall back to the mini photo.
 // Mixed strap has a chain color (gold/silver); we pick its photo from chainImages.
-function strapImageFor(strap, sizeId, chainColor = "gold") {
+const strapImageFor = (strap, sizeId, chainColor = "gold") => {
   const set = strap.chainImages ? strap.chainImages[chainColor] || strap.chainImages.gold : strap.images;
   // Guard against a misconfigured strap (missing images/variant) instead of crashing the render.
   if (!set) return strap.images?.mini ?? "";
   return set[sizeId] || set.mini;
-}
+};
 
 // Display label for a strap; Mixed appends its chain color (e.g. "Mixed (Gold)").
-function strapLabelFor(strap, chainColor) {
+const strapLabelFor = (strap, chainColor) => {
   if (strap.id !== "mixed") return strap.label;
   return `${strap.label} (${chainColor === "gold" ? "Gold" : "Silver"})`;
-}
+};
 
 const COLORS = [
   { id: "sky", name: "Sky", hex: "#25cfff", image: skyBag },
@@ -75,7 +75,7 @@ const COLORS = [
   { id: "purple", name: "Purple", hex: "#8d47ff", image: purpleBag },
 ];
 
-function BagPreview({ image, alt }) {
+const BagPreview = ({ image, alt }) => {
   return (
     <div className="relative w-full h-full">
       <img
@@ -85,9 +85,9 @@ function BagPreview({ image, alt }) {
       />
     </div>
   );
-}
+};
 
-function StepHeader({ step, total, title }) {
+const StepHeader = ({ step, total, title }) => {
   return (
     <div className="mb-6">
       <p className="font-['Centaur'] text-[13px] tracking-[3px] text-[#999] uppercase mb-1">
@@ -98,11 +98,28 @@ function StepHeader({ step, total, title }) {
       </h3>
     </div>
   );
-}
+};
 
 const STEPS = ["Size", "Strap", "Color"];
+// Named indices into STEPS — avoids magic 0/1/2 checks around the render.
+const STEP = { SIZE: 0, STRAP: 1, COLOR: 2 };
 
-export default function CustomStudioPage() {
+const CHAIN_FINISHES = [
+  { id: "gold", label: "Gold" },
+  { id: "silver", label: "Silver" },
+];
+
+// How long the "Added ✓" state shows before redirecting to the cart.
+const REDIRECT_DELAY_MS = 1200;
+
+// Shared look for selectable option buttons (size / strap / chain finish).
+const optionClass = (selected) => {
+  return selected
+    ? "border-black bg-black text-white"
+    : "border-black/20 bg-white text-black hover:border-black/50";
+};
+
+const CustomStudioPage = () => {
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState({
     size: "small", // intentional default — "Small" is the most popular size, not SIZES[0] ("Mini")
@@ -123,8 +140,10 @@ export default function CustomStudioPage() {
   const strapLabel = strapLabelFor(strapInfo, config.chainColor);
 
   // Preview follows the active step: size photo on Size, strap photo otherwise.
-  const previewImage = step === 0 ? sizeInfo.image : strapImageFor(strapInfo, config.size, config.chainColor);
-  const previewLabel = step === 0 ? `${sizeInfo.label} · ${sizeInfo.cm}` : `${sizeInfo.label} · ${strapLabel}`;
+  const onSizeStep = step === STEP.SIZE;
+  const previewImage = onSizeStep ? sizeInfo.image : strapImageFor(strapInfo, config.size, config.chainColor);
+  const previewLabel = onSizeStep ? `${sizeInfo.label} · ${sizeInfo.cm}` : `${sizeInfo.label} · ${strapLabel}`;
+  const openPreviewLightbox = () => setLightbox({ image: previewImage, label: previewLabel });
 
   // A new configuration is a new product — re-enable the Add-to-Cart button on any change.
   function updateConfig(patch) {
@@ -135,7 +154,7 @@ export default function CustomStudioPage() {
   // Drive the post-add redirect from an effect so the timer is cleared if the user leaves first.
   useEffect(() => {
     if (!addedToCart) return;
-    const timer = setTimeout(() => navigate("/cart"), 1200);
+    const timer = setTimeout(() => navigate("/cart"), REDIRECT_DELAY_MS);
     return () => clearTimeout(timer);
   }, [addedToCart, navigate]);
 
@@ -217,18 +236,16 @@ export default function CustomStudioPage() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.25 }}
             >
-              {step === 0 && (
+              {step === STEP.SIZE && (
                 <div>
-                  <StepHeader step={1} total={3} title="Choose Size" />
+                  <StepHeader step={step + 1} total={STEPS.length} title="Choose Size" />
                   <div className="grid grid-cols-2 gap-4">
                     {SIZES.map((sz) => (
                       <button
                         key={sz.id}
                         onClick={() => updateConfig({ size: sz.id })}
-                        className={`px-5 py-5 border text-left transition-all cursor-pointer ${config.size === sz.id
-                          ? "border-black bg-black text-white"
-                          : "border-black/20 bg-white text-black hover:border-black/50"
-                          }`}
+                        aria-pressed={config.size === sz.id}
+                        className={`px-5 py-5 border text-left transition-all cursor-pointer ${optionClass(config.size === sz.id)}`}
                       >
                         <p className="font-['Perpetua_Titling_MT'] text-[13px] tracking-[2px] uppercase">{sz.label}</p>
                         <p className={`font-['Centaur'] text-[12px] tracking-[1px] mt-1 ${config.size === sz.id ? "text-white/70" : "text-black/50"}`}>
@@ -243,48 +260,46 @@ export default function CustomStudioPage() {
                 </div>
               )}
 
-              {step === 1 && (
+              {step === STEP.STRAP && (
                 <div>
-                  <StepHeader step={2} total={3} title="Choose Strap" />
+                  <StepHeader step={step + 1} total={STEPS.length} title="Choose Strap" />
                   <div className="grid grid-cols-2 gap-4">
-                    {STRAPS.map((st) => (
-                      // Wrapper hosts the selectable button and the zoom button as siblings
-                      // (no interactive element nested inside another — valid, accessible DOM).
-                      <div key={st.id} className="group relative">
-                        <button
-                          onClick={() => updateConfig({ strap: st.id })}
-                          className={`w-full p-4 border text-left transition-all cursor-pointer ${config.strap === st.id
-                            ? "border-black bg-black text-white"
-                            : "border-black/20 bg-white text-black hover:border-black/50"
-                            }`}
-                        >
-                          <div className="relative aspect-square mb-3 overflow-hidden bg-[#FAFAFA]">
-                            <img
-                              src={strapImageFor(st, config.size, config.chainColor)}
-                              alt={`${st.label} strap`}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                          </div>
-                          <p className="font-['Perpetua_Titling_MT'] text-[13px] tracking-[2px] uppercase">{st.label}</p>
-                          <p className={`font-['Dorsa'] text-[28px] tracking-[2px] mt-1 ${config.strap === st.id ? "text-white" : "text-black"}`}>
-                            {st.price === 0 ? "Free" : `+$${st.price}`}
-                          </p>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setLightbox({
-                              image: strapImageFor(st, config.size, config.chainColor),
-                              label: `${sizeInfo.label} · ${strapLabelFor(st, config.chainColor)}`,
-                            })
-                          }
-                          aria-label={`View ${st.label} strap photo`}
-                          className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-black text-[15px] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-white cursor-zoom-in border-none"
-                        >
-                          <span aria-hidden="true">⛶</span>
-                        </button>
-                      </div>
-                    ))}
+                    {STRAPS.map((st) => {
+                      const isSelected = config.strap === st.id;
+                      const strapImage = strapImageFor(st, config.size, config.chainColor);
+                      const strapCaption = `${sizeInfo.label} · ${strapLabelFor(st, config.chainColor)}`;
+                      return (
+                        // Wrapper hosts the selectable button and the zoom button as siblings
+                        // (no interactive element nested inside another — valid, accessible DOM).
+                        <div key={st.id} className="group relative">
+                          <button
+                            onClick={() => updateConfig({ strap: st.id })}
+                            aria-pressed={isSelected}
+                            className={`w-full p-4 border text-left transition-all cursor-pointer ${optionClass(isSelected)}`}
+                          >
+                            <div className="relative aspect-square mb-3 overflow-hidden bg-[#FAFAFA]">
+                              <img
+                                src={strapImage}
+                                alt={`${st.label} strap`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              />
+                            </div>
+                            <p className="font-['Perpetua_Titling_MT'] text-[13px] tracking-[2px] uppercase">{st.label}</p>
+                            <p className={`font-['Dorsa'] text-[28px] tracking-[2px] mt-1 ${isSelected ? "text-white" : "text-black"}`}>
+                              +${st.price}
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLightbox({ image: strapImage, label: strapCaption })}
+                            aria-label={`View ${st.label} strap photo`}
+                            className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 text-black text-[15px] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-white cursor-zoom-in border-none"
+                          >
+                            <span aria-hidden="true">⛶</span>
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {config.strap === "mixed" && (
@@ -293,17 +308,12 @@ export default function CustomStudioPage() {
                         Chain finish
                       </p>
                       <div className="flex gap-3">
-                        {[
-                          { id: "gold", label: "Gold" },
-                          { id: "silver", label: "Silver" },
-                        ].map((chain) => (
+                        {CHAIN_FINISHES.map((chain) => (
                           <button
                             key={chain.id}
                             onClick={() => updateConfig({ chainColor: chain.id })}
-                            className={`flex-1 py-3 border font-['Perpetua_Titling_MT'] text-[12px] tracking-[2px] uppercase transition-all cursor-pointer ${config.chainColor === chain.id
-                              ? "border-black bg-black text-white"
-                              : "border-black/20 bg-white text-black hover:border-black/50"
-                              }`}
+                            aria-pressed={config.chainColor === chain.id}
+                            className={`flex-1 py-3 border font-['Perpetua_Titling_MT'] text-[12px] tracking-[2px] uppercase transition-all cursor-pointer ${optionClass(config.chainColor === chain.id)}`}
                           >
                             {chain.label}
                           </button>
@@ -314,9 +324,9 @@ export default function CustomStudioPage() {
                 </div>
               )}
 
-              {step === 2 && (
+              {step === STEP.COLOR && (
                 <div>
-                  <StepHeader step={3} total={3} title="Choose Color" />
+                  <StepHeader step={step + 1} total={STEPS.length} title="Choose Color" />
                   <div className="grid grid-cols-5 gap-3">
                     {COLORS.map((c) => (
                       <button
@@ -400,11 +410,11 @@ export default function CustomStudioPage() {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
-              onClick={() => setLightbox({ image: previewImage, label: previewLabel })}
+              onClick={openPreviewLightbox}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setLightbox({ image: previewImage, label: previewLabel });
+                  openPreviewLightbox();
                 }
               }}
               className="w-full h-full max-w-[380px] max-h-[380px] mx-auto cursor-zoom-in transition-transform duration-500 group-hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
@@ -413,7 +423,7 @@ export default function CustomStudioPage() {
             </motion.div>
           </div>
 
-          {step === 2 ? (
+          {step === STEP.COLOR ? (
             <div className="mt-4 flex items-center gap-3 px-2">
               <div className="w-6 h-6 rounded-full border border-black/20" style={{ backgroundColor: config.color.hex }} title={config.color.name} />
               <span className="font-['Centaur'] text-[13px] tracking-[2px] text-black/50">
@@ -423,7 +433,7 @@ export default function CustomStudioPage() {
           ) : (
             <div className="mt-4 px-2">
               <span className="font-['Centaur'] text-[13px] tracking-[2px] text-black/50">
-                {step === 0 ? sizeInfo.label : strapLabel}
+                {onSizeStep ? sizeInfo.label : strapLabel}
               </span>
             </div>
           )}
@@ -487,4 +497,6 @@ export default function CustomStudioPage() {
       </AnimatePresence>
     </div>
   );
-}
+};
+
+export default CustomStudioPage;

@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import React, { useRef } from 'react';
 import HeroSection from "./HeroSection";
 import AboutSection from "./AboutSection";
 import CustomBagSection from "./CustomBagSection";
 import CategoriesSection from "./CategoriesSection";
 
-function HomePage() {
+const HomePage = () => {
     const categoriesRef = useRef(null);
 
     const handleScrollToCategories = () => {
@@ -22,6 +22,6 @@ function HomePage() {
             <CategoriesSection categoriesRef={categoriesRef} />
         </div>
     );
-}
+};
 
 export default HomePage;

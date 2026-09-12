@@ -1,6 +1,7 @@
+import React from 'react';
 import { NavLink } from "react-router-dom";
 
-function Footer() {
+const Footer = () => {
     const sectionTitleClass =
         "text-[#f5efe8] text-[32px] tracking-[4px] leading-none m-0 mb-6";
 
@@ -110,6 +111,6 @@ function Footer() {
             </div>
         </footer>
     );
-}
+};
 
 export default Footer;

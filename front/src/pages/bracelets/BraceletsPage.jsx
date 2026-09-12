@@ -1,33 +1,29 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api, { imageUrl } from '../../api';
+import { useCart } from '../../context/CartContext';
 
-export default function BraceletsPage() {
+const BraceletsPage = () => {
     const [bracelets, setBracelets] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const { items, addToCart } = useCart();
 
+    // Runs once when the page opens: bring the catalog and keep only the bracelets.
     useEffect(() => {
-        const fetchBracelets = async () => {
-            try {
-                const res = await fetch("http://localhost:5000/api/products");
-                const data = await res.json();
-
-                const braceletsOnly = (data.data || []).filter(
-                    (product) => product.category === "bracelets"
+        api
+            .get('/api/products')
+            .then((response) => {
+                const braceletsOnly = response.data.data.filter(
+                    (product) => product.category === 'bracelets'
                 );
-
                 setBracelets(braceletsOnly);
-            } catch (err) {
-                console.error("Error loading bracelets:", err);
-                setBracelets([]);
-            } finally {
                 setLoading(false);
-            }
-        };
-
-        fetchBracelets();
+            })
+            .catch((error) => {
+                console.log(error);
+                setLoading(false);
+            });
     }, []);
 
     return (
@@ -75,7 +71,7 @@ export default function BraceletsPage() {
                                     <div key={item._id} className="group flex flex-col h-full">
                                         <div className="aspect-[4/4] bg-[#fafafa] mb-6 overflow-hidden relative border border-black/10 group">
                                             <img
-                                                src={`http://localhost:5000/${item.file_name.replace(/^\//, '')}`}
+                                                src={imageUrl(item.file_name)}
                                                 alt={item.model_name}
                                                 className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
                                             />
@@ -160,4 +156,6 @@ export default function BraceletsPage() {
             </section>
         </div>
     );
-}
+};
+
+export default BraceletsPage;

@@ -1,8 +1,9 @@
+import React from 'react';
 import { NavLink, useNavigate } from "react-router-dom";
 import { ShoppingBag, User, LogOut } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 
-function Header({ token, setToken, setUser, user }) {
+const Header = ({ token, setToken, setUser, user }) => {
   const navigate = useNavigate();
 
 
@@ -96,6 +97,6 @@ function Header({ token, setToken, setUser, user }) {
       </div>
     </header>
   );
-}
+};
 
 export default Header;

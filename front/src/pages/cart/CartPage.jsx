@@ -1,8 +1,9 @@
+import React from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
-export default function CartPage() {
+const CartPage = () => {
   const { items, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
   const navigate = useNavigate();
 
@@ -185,4 +186,6 @@ export default function CartPage() {
       </div>
     </div>
   );
-}
+};
+
+export default CartPage;

@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-
-const API = "http://localhost:5000";
+import React, { useEffect, useState } from 'react';
+import api, { imageUrl, authHeader } from '../../api';
 
 const EMPTY = {
   model_name: "",
@@ -11,9 +10,7 @@ const EMPTY = {
   style: "",
 };
 
-const imgUrl = (file_name) => `${API}/${String(file_name).replace(/^\//, "")}`;
-
-export default function AdminPage({ token }) {
+const AdminPage = ({ token }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY);
@@ -23,23 +20,23 @@ export default function AdminPage({ token }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const loadProducts = async () => {
-    try {
-      const res = await fetch(`${API}/api/products`);
-      const data = await res.json();
-      setProducts(data.data || []);
-    } catch {
-      setMessage({ type: "error", text: "Failed to load products" });
-    } finally {
-      setLoading(false);
-    }
+  // Brings the whole catalog into the table.
+  const loadProducts = () => {
+    api
+      .get('/api/products')
+      .then((response) => {
+        setProducts(response.data.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.log(error);
+        setMessage({ type: "error", text: "Failed to load products" });
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
-    const run = async () => {
-      await loadProducts();
-    };
-    run();
+    loadProducts();
   }, []);
 
   const resetForm = () => {
@@ -81,44 +78,43 @@ export default function AdminPage({ token }) {
     if (imageFile) fd.append("image", imageFile);
 
     setSaving(true);
-    try {
-      const res = await fetch(
-        editingId ? `${API}/api/products/${editingId}` : `${API}/api/products`,
-        {
-          method: editingId ? "PUT" : "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || "Save failed");
 
-      setMessage({ type: "success", text: editingId ? "Product updated" : "Product added" });
-      resetForm();
-      await loadProducts();
-    } catch (err) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setSaving(false);
-    }
+    // editingId is set when the manager pressed Edit on a row,
+    // so the same form both creates a new product and updates an old one.
+    const request = editingId
+      ? api.put(`/api/products/${editingId}`, fd, authHeader(token))
+      : api.post('/api/products', fd, authHeader(token));
+
+    request
+      .then(() => {
+        setMessage({ type: "success", text: editingId ? "Product updated" : "Product added" });
+        resetForm();
+        loadProducts();
+      })
+      .catch((error) => {
+        console.log(error);
+        setMessage({ type: "error", text: error.response?.data?.message || "Save failed" });
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 
-  const handleDelete = async (p) => {
-    if (!window.confirm(`Delete "${p.model_name}"?`)) return;
+  const handleDelete = (product) => {
+    if (!window.confirm(`Delete "${product.model_name}"?`)) return;
     setMessage(null);
-    try {
-      const res = await fetch(`${API}/api/products/${p._id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+
+    api
+      .delete(`/api/products/${product._id}`, authHeader(token))
+      .then(() => {
+        if (editingId === product._id) resetForm();
+        setMessage({ type: "success", text: "Product deleted" });
+        loadProducts();
+      })
+      .catch((error) => {
+        console.log(error);
+        setMessage({ type: "error", text: error.response?.data?.message || "Delete failed" });
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.msg || "Delete failed");
-      if (editingId === p._id) resetForm();
-      setMessage({ type: "success", text: "Product deleted" });
-      await loadProducts();
-    } catch (err) {
-      setMessage({ type: "error", text: err.message });
-    }
   };
 
   const shown = products.filter((p) => filter === "all" || p.category === filter);
@@ -281,7 +277,7 @@ export default function AdminPage({ token }) {
               {shown.map((p) => (
                 <div key={p._id} className="border border-black/10 flex flex-col">
                   <div className="aspect-square bg-[#fafafa] overflow-hidden">
-                    <img src={imgUrl(p.file_name)} alt={p.model_name} className="w-full h-full object-cover" />
+                    <img src={imageUrl(p.file_name)} alt={p.model_name} className="w-full h-full object-cover" />
                   </div>
                   <div className="p-4 flex flex-col gap-1 flex-1">
                     <p className="font-['Perpetua_Titling_MT'] text-[12px] tracking-[1.5px] uppercase">{p.model_name}</p>
@@ -311,4 +307,6 @@ export default function AdminPage({ token }) {
       </div>
     </div>
   );
-}
+};
+
+export default AdminPage;

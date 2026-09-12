@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../api';
 
-const API = "http://localhost:5000";
-
-export default function LoginPage({ setToken, setUser }) {
+const LoginPage = ({ setToken, setUser }) => {
 
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -22,53 +20,26 @@ export default function LoginPage({ setToken, setUser }) {
     navigate(data.user?.role === "manager" || data.user?.role === "admin" ? "/admin" : "/");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
+    // Without preventDefault the browser would reload the page on submit.
     e.preventDefault();
     setMessage("");
 
-    const url = isLogin ? `${API}/api/auth/signin` : `${API}/api/auth/signup`;
-    const payload = isLogin ? { email, password } : { name, email, password };
+    // The same form is used for signing in and for registering.
+    const url = isLogin ? "/api/auth/signin" : "/api/auth/signup";
+    const body = isLogin ? { email, password } : { name, email, password };
 
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    api
+      .post(url, body)
+      .then((response) => {
+        applyAuth(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+        // The server explains what went wrong, for example "Invalid credentials".
+        setMessage(error.response?.data?.message || "Server error");
       });
-
-      const data = await res.json();
-
-      if (res.ok && data.token) {
-        applyAuth(data);
-      } else {
-        setMessage(data.msg || "Auth failed");
-      }
-    } catch (err) {
-      setMessage("Server error");
-    }
   };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setMessage("");
-    try {
-      const res = await fetch(`${API}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: credentialResponse.credential }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.token) {
-        applyAuth(data);
-      } else {
-        setMessage(data.msg || "Google auth failed");
-      }
-    } catch (err) {
-      setMessage("Server error");
-    }
-  };
-
 
   const toggleLoginMode = (mode) => {
     setIsLogin(mode);
@@ -267,25 +238,6 @@ export default function LoginPage({ setToken, setUser }) {
           </form>
 
 
-          <div className="flex items-center gap-4 my-8">
-            <div className="flex-1 h-px bg-black/10" />
-            <span className="font-['Centaur:Regular',sans-serif] text-[12px] tracking-[2px] text-black/30">
-              or
-            </span>
-            <div className="flex-1 h-px bg-black/10" />
-          </div>
-
-
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setMessage("Google auth failed")}
-              text={isLogin ? "signin_with" : "signup_with"}
-              width="320"
-            />
-          </div>
-
-
           <p className="text-center mt-10 font-['Centaur:Regular',sans-serif] text-[14px] tracking-[2px] text-black/40">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
@@ -300,4 +252,6 @@ export default function LoginPage({ setToken, setUser }) {
       </div>
     </div>
   );
-}
+};
+
+export default LoginPage;

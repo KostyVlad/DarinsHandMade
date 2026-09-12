@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,7 +16,7 @@ const bagOptions = [
   { color: "#8d47ff", image: purpleBag },
 ];
 
-function CustomBagSection() {
+const CustomBagSection = () => {
   const [selected, setSelected] = useState(0);
   const [createHovered, setCreateHovered] = useState(false);
 
@@ -117,6 +117,6 @@ function CustomBagSection() {
       </div>
     </section>
   );
-}
+};
 
 export default CustomBagSection;

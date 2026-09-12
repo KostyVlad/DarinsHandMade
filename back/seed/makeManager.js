@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('../models/userModel');
+const connectDB = require('../db/connect');
+const User = require('../models/userModel.js');
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ const start = async () => {
   }
 
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectDB(process.env.MONGO_URI);
     const user = await User.findOneAndUpdate({ email }, { role }, { new: true });
     if (!user) {
       console.error(`User with email "${email}" not found. Register with this email first.`);
@@ -22,8 +22,8 @@ const start = async () => {
     }
     console.log(`Done: ${user.email} now has role="${user.role}"`);
     process.exit(0);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.log(error.message);
     process.exit(1);
   }
 };

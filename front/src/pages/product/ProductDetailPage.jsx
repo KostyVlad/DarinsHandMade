@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
-import { ArrowLeft } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import api, { imageUrl } from '../../api';
+import { useCart } from '../../context/CartContext';
 
-export default function ProductDetailPage() {
+const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items, addToCart } = useCart();
@@ -11,23 +12,20 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
+  // useParams gave us the id from the address, so we ask the server
+  // for that one product. The effect runs again if the id changes.
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`);
-        const data = await res.json();
-        if (data.success && data.data) {
-          setProduct(data.data);
-        } else {
-          setNotFound(true);
-        }
-      } catch {
-        setNotFound(true);
-      } finally {
+    api
+      .get(`/api/products/${id}`)
+      .then((response) => {
+        setProduct(response.data.data);
         setLoading(false);
-      }
-    };
-    fetchProduct();
+      })
+      .catch((error) => {
+        console.log(error);
+        setNotFound(true);
+        setLoading(false);
+      });
   }, [id]);
 
   if (loading) {
@@ -72,7 +70,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
           <div className="aspect-square bg-[#fafafa] overflow-hidden border border-black/10">
             <img
-              src={`http://localhost:5000/${product.file_name.replace(/^\//, "")}`}
+              src={imageUrl(product.file_name)}
               alt={product.model_name}
               className="w-full h-full object-cover"
               onError={(e) => { e.target.style.display = "none"; }}
@@ -140,4 +138,6 @@ export default function ProductDetailPage() {
       </div>
     </div>
   );
-}
+};
+
+export default ProductDetailPage;

@@ -1,7 +1,8 @@
+import React from 'react';
 import { motion } from "framer-motion";
 import aboutBag from "./assets/AboutSectionBag.png";
 
-function AboutSection() {
+const AboutSection = () => {
   return (
     <section className="w-full bg-[#f3f3f1] -mt-[70px]">
       <div className="mx-auto flex max-w-[1512px] items-center justify-between px-[40px] py-[40px]">
@@ -49,6 +50,6 @@ function AboutSection() {
       </div>
     </section>
   );
-}
+};
 
 export default AboutSection;

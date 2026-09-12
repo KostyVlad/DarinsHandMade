@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import pinkBag from "./assets/pinkBag.png";
 
-function HeroSection({ onShopClick }) {
+const HeroSection = ({ onShopClick }) => {
     const [shopHovered, setShopHovered] = useState(false);
 
     return (
@@ -109,6 +109,6 @@ function HeroSection({ onShopClick }) {
             </div>
         </section>
     );
-}
+};
 
 export default HeroSection;

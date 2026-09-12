@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { CheckCircle } from "lucide-react";
 
-export default function CheckoutPage() {
+const CheckoutPage = () => {
   const { items, getTotalPrice, clearCart } = useCart();
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
@@ -248,4 +248,6 @@ export default function CheckoutPage() {
       </div>
     </div>
   );
-}
+};
+
+export default CheckoutPage;

@@ -2,3 +2,10 @@ node_modules/
 .env
 .planning/
 .claude/
+
+# Word documents (project proposal, project book) - kept out of git
+*.doc
+*.docx
+*.dotx
+# Word lock/owner files, e.g. ~$proposal.docx
+~$*
