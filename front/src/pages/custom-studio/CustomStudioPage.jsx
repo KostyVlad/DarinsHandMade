@@ -3,11 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
 
-import skyBag from "../home/assets/skyCustomBagSection.png";
-import blueBag from "../home/assets/blueCustomSectionbag.png";
-import greenBag from "../home/assets/greenCustomSectionbag.png";
-import pinkBag from "../home/assets/pinkCustomSectionbag.png";
-import purpleBag from "../home/assets/purpleCustomSectionbag.png";
 
 // Real product photos, one per size (filenames match the cm dimensions below).
 import sizeMini from "./10x8.png";
@@ -67,12 +62,40 @@ const strapLabelFor = (strap, chainColor) => {
   return `${strap.label} (${chainColor === "gold" ? "Gold" : "Silver"})`;
 };
 
+// A photo of the real beads for every colour Darina works with.
+// hex is only a fallback tint, the swatch the customer sees is the photo.
+import beadsAquamarine from "./beads/aquamarine.jpg";
+import beadsLightBlue from "./beads/light-blue.jpg";
+import beadsDarkBlue from "./beads/dark-blue.jpg";
+import beadsBluePurple from "./beads/blue-purple.jpg";
+import beadsGrassGreen from "./beads/grass-green.jpg";
+import beadsLightPink from "./beads/light-pink.jpg";
+import beadsDarkPink from "./beads/dark-pink.jpg";
+import beadsPeachPink from "./beads/peach-pink.jpg";
+import beadsBigRed from "./beads/big-red.jpg";
+import beadsLightYellow from "./beads/light-yellow.jpg";
+import beadsPureWhite from "./beads/pure-white.jpg";
+import beadsCreamyWhite from "./beads/creamy-white.jpg";
+import beadsTransparentWhite from "./beads/transparent-white.jpg";
+import beadsLightPowder from "./beads/light-powder.jpg";
+import beadsBlack from "./beads/black.jpg";
+
 const COLORS = [
-  { id: "sky", name: "Sky", hex: "#25cfff", image: skyBag },
-  { id: "blue", name: "Cobalt", hex: "#2d46ff", image: blueBag },
-  { id: "green", name: "Green", hex: "#39c24a", image: greenBag },
-  { id: "pink", name: "Pink", hex: "#ff00f5", image: pinkBag },
-  { id: "purple", name: "Purple", hex: "#8d47ff", image: purpleBag },
+  { id: "aquamarine", name: "Aquamarine", hex: "#68c4e8", beads: beadsAquamarine },
+  { id: "light-blue", name: "Light Blue", hex: "#92bbef", beads: beadsLightBlue },
+  { id: "dark-blue", name: "Dark Blue", hex: "#324b8b", beads: beadsDarkBlue },
+  { id: "blue-purple", name: "Blue Purple", hex: "#ab9de2", beads: beadsBluePurple },
+  { id: "grass-green", name: "Grass Green", hex: "#7ad19b", beads: beadsGrassGreen },
+  { id: "light-pink", name: "Light Pink", hex: "#d774b2", beads: beadsLightPink },
+  { id: "dark-pink", name: "Dark Pink", hex: "#f49ca9", beads: beadsDarkPink },
+  { id: "peach-pink", name: "Peach Pink", hex: "#f67aa8", beads: beadsPeachPink },
+  { id: "big-red", name: "Big Red", hex: "#c74f53", beads: beadsBigRed },
+  { id: "light-yellow", name: "Light Yellow", hex: "#f2d07d", beads: beadsLightYellow },
+  { id: "pure-white", name: "Pure White", hex: "#dcdcdd", beads: beadsPureWhite },
+  { id: "creamy-white", name: "Creamy White", hex: "#d8d5cb", beads: beadsCreamyWhite },
+  { id: "transparent-white", name: "Transparent White", hex: "#e5dddc", beads: beadsTransparentWhite },
+  { id: "light-powder", name: "Light Powder", hex: "#f4bdd0", beads: beadsLightPowder },
+  { id: "black", name: "Black", hex: "#494c4a", beads: beadsBlack },
 ];
 
 const BagPreview = ({ image, alt }) => {
@@ -335,14 +358,15 @@ const CustomStudioPage = () => {
                         aria-label={c.name}
                         aria-pressed={config.color.id === c.id}
                         onClick={() => updateConfig({ color: c })}
-                        className="relative aspect-square rounded-full transition-transform hover:scale-110"
+                        className="relative aspect-square rounded-full overflow-hidden p-0 cursor-pointer transition-transform hover:scale-110"
                         style={{
                           backgroundColor: c.hex,
                           border: config.color.id === c.id ? "3px solid #000" : "1px solid rgba(0,0,0,0.15)",
                         }}
                       >
+                        <img src={c.beads} alt="" loading="lazy" className="w-full h-full object-cover" />
                         {config.color.id === c.id && (
-                          <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-white text-[14px] drop-shadow">✓</span>
+                          <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center bg-black/35 text-white text-[16px] drop-shadow">✓</span>
                         )}
                       </button>
                     ))}
@@ -425,7 +449,7 @@ const CustomStudioPage = () => {
 
           {step === STEP.COLOR ? (
             <div className="mt-4 flex items-center gap-3 px-2">
-              <div className="w-6 h-6 rounded-full border border-black/20" style={{ backgroundColor: config.color.hex }} title={config.color.name} />
+              <img src={config.color.beads} alt="" title={config.color.name} className="w-6 h-6 rounded-full border border-black/20 object-cover" />
               <span className="font-['Centaur'] text-[13px] tracking-[2px] text-black/50">
                 {config.color.name} · {strapLabel}
               </span>
