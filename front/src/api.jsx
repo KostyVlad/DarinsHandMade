@@ -1,8 +1,17 @@
 import axios from 'axios';
 
-// One place that knows the address of the server. Every request in the
-// project goes through here, so moving the server means changing one line.
-export const API_BASE_URL = 'http://localhost:5000';
+// One place that knows the address of the server. On the development machine
+// it is the local server; anywhere else it is the deployed one.
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+
+export const API_BASE_URL = isLocalhost
+  ? 'http://localhost:5000'
+  : import.meta.env.VITE_API_URL || 'https://darinshandmade.onrender.com';
+
+// Same value under the shorter name used by the order and account pages.
+export const API = API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

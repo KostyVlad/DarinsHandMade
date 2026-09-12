@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../../api';
+import { Link, useNavigate } from "react-router-dom";
+import api from "../../api";
 
 const LoginPage = ({ setToken, setUser }) => {
 
@@ -212,12 +212,12 @@ const LoginPage = ({ setToken, setUser }) => {
 
             {isLogin && (
               <div className="text-right">
-                <a
-                  href="#"
-                  className="font-['Centaur:Regular',sans-serif] text-[13px] tracking-[2px] text-black/40 hover:text-black transition-colors"
+                <Link
+                  to="/forgot-password"
+                  className="font-['Centaur:Regular',sans-serif] text-[13px] tracking-[2px] text-black/40 hover:text-black transition-colors no-underline"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
             )}
 

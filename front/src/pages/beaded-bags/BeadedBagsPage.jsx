@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import api, { imageUrl } from '../../api';
-import { useCart } from '../../context/CartContext';
+import { Link } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import api, { imageUrl } from "../../api";
 
 const BeadedBagsPage = () => {
   const [bags, setBags] = useState([]);
@@ -12,9 +12,9 @@ const BeadedBagsPage = () => {
   // Runs once when the page opens: bring the catalog and keep only the bags.
   useEffect(() => {
     api
-      .get('/api/products')
+      .get("/api/products")
       .then((response) => {
-        const bagsOnly = response.data.data.filter((product) => product.category === 'bags');
+        const bagsOnly = response.data.data.filter((product) => product.category === "bags");
         setBags(bagsOnly);
         setLoading(false);
       })
@@ -26,32 +26,32 @@ const BeadedBagsPage = () => {
 
   return (
     <div className="bg-white min-h-screen">
-      <section className="relative bg-[#050000] text-white py-32 px-8">
+      <section className="relative bg-[#050000] text-white py-20 md:py-32 px-6 md:px-8">
         <div className="max-w-[1440px] mx-auto text-center">
-          <h1 className="font-['Dorsa'] text-[120px] md:text-[200px] tracking-[21.6px] leading-none mb-8">
+          <h1 className="font-['Dorsa'] text-[56px] sm:text-[90px] md:text-[200px] tracking-[6px] md:tracking-[21.6px] leading-none mb-8">
             BEADED BAGS
           </h1>
-          <p className="font-['Centaur'] text-[#ccc] text-[24px] tracking-[4.32px] max-w-[700px] mx-auto">
+          <p className="font-['Centaur'] text-[#ccc] text-[18px] md:text-[24px] tracking-[3px] md:tracking-[4.32px] max-w-[700px] mx-auto">
             Exquisite handcrafted beaded bags. Each bag is a work of art, meticulously designed and created by hand.
           </p>
         </div>
       </section>
 
-      <section className="py-16 px-8 bg-[#f8f8f8]">
+      <section className="py-16 px-6 md:px-8 bg-[#f8f8f8]">
         <div className="max-w-[900px] mx-auto text-center">
-          <p className="font-['Centaur'] text-[#333] text-[28px] tracking-[5.04px] italic leading-relaxed">
+          <p className="font-['Centaur'] text-[#333] text-[20px] md:text-[28px] tracking-[3px] md:tracking-[5.04px] italic leading-relaxed">
             "A beaded bag is not just an accessory — it's a statement of elegance, craftsmanship, and timeless style."
           </p>
         </div>
       </section>
 
-      <section className="py-20 px-8">
+      <section className="py-20 px-6 md:px-8">
         <div className="max-w-[1440px] mx-auto">
           <div className="mb-12">
-            <h2 className="font-['Dorsa'] text-[72px] tracking-[12.96px] leading-none text-black mb-4">
+            <h2 className="font-['Dorsa'] text-[44px] md:text-[72px] tracking-[6px] md:tracking-[12.96px] leading-none text-black mb-4">
               Featured Collection
             </h2>
-            <p className="font-['Centaur'] text-[#333] text-[20px] tracking-[3.6px]">
+            <p className="font-['Centaur'] text-[#333] text-[18px] md:text-[20px] tracking-[3.6px]">
               Discover our curated selection of beaded bags
             </p>
           </div>
@@ -64,6 +64,7 @@ const BeadedBagsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {bags.map((bag) => {
                 const isInCart = items.some((cartItem) => cartItem.id === bag._id);
+                const outOfStock = bag.stock === 0;
 
                 return (
                   <div key={bag._id} className="group flex flex-col h-full">
@@ -77,6 +78,17 @@ const BeadedBagsPage = () => {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                      {typeof bag.stock === "number" && (
+                        <span className={`absolute top-3 left-3 px-3 py-1 text-[11px] tracking-[1.5px] uppercase font-['Perpetua_Titling_MT'] ${
+                          bag.stock === 0
+                            ? "bg-red-600 text-white"
+                            : bag.stock <= 3
+                              ? "bg-amber-500 text-white"
+                              : "bg-white/90 text-black"
+                        }`}>
+                          {bag.stock === 0 ? "Sold out" : bag.stock <= 3 ? `Only ${bag.stock} left` : `${bag.stock} in stock`}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-start justify-between mb-3">
@@ -105,13 +117,16 @@ const BeadedBagsPage = () => {
                       </span>
 
                       <button
-                        onClick={() => !isInCart && addToCart(bag)}
-                        className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${isInCart
-                          ? "bg-white text-black border-black/30 cursor-default"
-                          : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
+                        onClick={() => !isInCart && !outOfStock && addToCart(bag)}
+                        disabled={outOfStock}
+                        className={`font-['Perpetua_Titling_MT'] text-[14px] tracking-[2.52px] px-8 py-3 rounded-full transition-colors border ${outOfStock
+                          ? "bg-white text-black/40 border-black/15 cursor-not-allowed"
+                          : isInCart
+                            ? "bg-white text-black border-black/30 cursor-default"
+                            : "bg-[#050000] text-white border-transparent hover:bg-[#050000]/80 cursor-pointer"
                           }`}
                       >
-                        {isInCart ? "In Cart" : "Add to Cart"}
+                        {outOfStock ? "Out of Stock" : isInCart ? "In Cart" : "Add to Cart"}
                       </button>
                     </div>
                   </div>
@@ -122,9 +137,9 @@ const BeadedBagsPage = () => {
         </div>
       </section>
 
-      <section className="bg-black text-white py-20 px-8">
+      <section className="bg-black text-white py-20 px-6 md:px-8">
         <div className="max-w-[1200px] mx-auto">
-          <h2 className="font-['Dorsa'] text-[96px] tracking-[17.28px] leading-none mb-12 text-center">
+          <h2 className="font-['Dorsa'] text-[48px] md:text-[96px] tracking-[8px] md:tracking-[17.28px] leading-none mb-12 text-center">
             Care Instructions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

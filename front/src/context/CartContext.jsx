@@ -1,47 +1,107 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import api, { imageUrl, authHeader } from '../api';
 
 // A context lets every page read the cart without passing it down as a prop.
 const CartContext = createContext();
 
+// A visitor who is not signed in still gets a cart; it lives in this browser.
+const GUEST_KEY = 'guestCart';
+
+const loadGuestCart = () => {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_KEY)) || [];
+  } catch {
+    return [];
+  }
+};
+
+const saveGuestCart = (items) => {
+  localStorage.setItem(GUEST_KEY, JSON.stringify(items));
+};
+
+// Turns one row of the server cart into the simple shape the pages display.
+const toCartItem = (item) => ({
+  id: item.product._id,
+  name: item.product.model_name,
+  category: item.product.category,
+  image: imageUrl(item.product.file_name),
+  price: item.product.price,
+  quantity: item.quantity
+});
+
 const CartProvider = ({ children, token }) => {
   const [items, setItems] = useState([]);
 
-  // Reads the cart of the logged in user from the server.
+  // Remembers the previous token, so we can tell a fresh login from a redraw.
+  const prevToken = useRef(null);
+
+  // Signed in: read the cart from the server. Guest: read it from this browser.
   const fetchCart = () => {
     if (!token) {
-      setItems([]);
+      setItems(loadGuestCart());
       return;
     }
 
     api
       .get('/api/cart', authHeader(token))
       .then((response) => {
-        // The server sends the products inside the items, so here we only
-        // turn them into the simple shape that the pages display.
-        const cartItems = response.data.data.items.map((item) => ({
-          id: item.product._id,
-          name: item.product.model_name,
-          category: item.product.category,
-          image: imageUrl(item.product.file_name),
-          price: item.product.price,
-          quantity: item.quantity,
-        }));
-        setItems(cartItems);
+        setItems(response.data.data.items.map(toCartItem));
       })
       .catch((error) => {
         console.log(error);
       });
   };
 
-  // Runs on the first render and again every time the user logs in or out.
+  // On the first render, and again whenever the user logs in or out.
   useEffect(() => {
-    fetchCart();
+    const justLoggedIn = token && !prevToken.current;
+    prevToken.current = token;
+
+    if (!justLoggedIn) {
+      fetchCart();
+      return;
+    }
+
+    // The visitor filled a cart before logging in, so move it to the server.
+    const guestItems = loadGuestCart();
+    if (guestItems.length === 0) {
+      fetchCart();
+      return;
+    }
+
+    // One request per unit, because the server adds one item at a time.
+    const requests = guestItems.flatMap((item) =>
+      Array.from({ length: item.quantity }, () =>
+        api.post('/api/cart', { productId: item.id }, authHeader(token))
+      )
+    );
+
+    Promise.allSettled(requests).then(() => {
+      localStorage.removeItem(GUEST_KEY);
+      fetchCart();
+    });
   }, [token]);
 
   const addToCart = (product) => {
     if (!token) {
-      alert('Please sign in to add items to your cart!');
+      const guest = loadGuestCart();
+      const existing = guest.find((item) => item.id === product._id);
+
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        guest.push({
+          id: product._id,
+          name: product.model_name,
+          category: product.category,
+          image: imageUrl(product.file_name),
+          price: product.price,
+          quantity: 1
+        });
+      }
+
+      saveGuestCart(guest);
+      setItems([...guest]);
       return;
     }
 
@@ -52,11 +112,18 @@ const CartProvider = ({ children, token }) => {
       })
       .catch((error) => {
         console.log(error);
-        alert('Failed to add to cart');
+        alert(error.response?.data?.message || 'Failed to add to cart');
       });
   };
 
   const removeFromCart = (productId) => {
+    if (!token) {
+      const guest = loadGuestCart().filter((item) => item.id !== productId);
+      saveGuestCart(guest);
+      setItems(guest);
+      return;
+    }
+
     api
       .delete(`/api/cart/${productId}`, authHeader(token))
       .then(() => {
@@ -68,18 +135,25 @@ const CartProvider = ({ children, token }) => {
   };
 
   // A bag built in the Custom Studio is not a product from the catalog,
-  // so it is kept in the cart of this browser only.
+  // so it is kept only on this side.
   const addCustomItem = (item) => {
-    setItems((prev) => [...prev, item]);
+    const updated = [...items, item];
+    setItems(updated);
+    if (!token) saveGuestCart(updated);
   };
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return;
-    setItems(items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)));
+    const updated = items.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    );
+    setItems(updated);
+    if (!token) saveGuestCart(updated);
   };
 
   const clearCart = () => {
     setItems([]);
+    if (!token) localStorage.removeItem(GUEST_KEY);
   };
 
   const getTotalPrice = () => {
@@ -100,7 +174,7 @@ const CartProvider = ({ children, token }) => {
         updateQuantity,
         getTotalPrice,
         clearCart,
-        getTotalItems,
+        getTotalItems
       }}
     >
       {children}

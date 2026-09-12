@@ -25,6 +25,18 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'user'
+    },
+    // Filled in only while a "forgot password" link is alive. The token is
+    // stored hashed, so even the database never holds the link itself.
+    resetPasswordToken: {
+      type: String,
+      default: null,
+      select: false
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
+      select: false
     }
   },
   {

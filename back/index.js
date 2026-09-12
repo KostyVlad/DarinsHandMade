@@ -9,11 +9,22 @@ const connectDB = require('./db/connect');
 const productsRoute = require('./routes/productsRoute.js');
 const authRoute = require('./routes/authRoute.js');
 const cartRoute = require('./routes/cartRoute.js');
+const ordersRoute = require('./routes/ordersRoute.js');
+const { stripeWebhook } = require('./controllers/OrderController');
 
 const app = express();
 
-app.use(express.json());
+// The site runs behind the hosting provider's proxy, so express has to trust
+// it to read the real client IP (the rate limiters count per IP).
+app.set('trust proxy', 1);
+
 app.use(cors());
+
+// Stripe sends the webhook with a signature over the raw body, so this one
+// route has to be registered before express.json() parses the body away.
+app.post('/api/orders/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
+
+app.use(express.json());
 
 // Security headers. crossOriginResourcePolicy is off so the React app
 // on another port can still load the product images from /uploads.
@@ -36,6 +47,15 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/signin', authLimiter);
 app.use('/api/auth/signup', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Asking for a reset link is limited harder: 5 per hour from the same IP.
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many password reset requests. Please try again in an hour.'
+});
+app.use('/api/auth/forgot-password', resetLimiter);
 
 // Product images are served as static files.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -43,6 +63,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/products', productsRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/cart', cartRoute);
+app.use('/api/orders', ordersRoute);
 
 app.get('/', (req, res) => {
   res.send('<h2>DARINS HANDMADE API</h2>');

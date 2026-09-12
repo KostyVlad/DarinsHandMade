@@ -10,6 +10,14 @@ const toArray = (value) => {
   return value.split(',').map((item) => item.trim()).filter(Boolean);
 };
 
+// The stock field arrives from the form as text. null means the manager
+// left it empty, so this product is not stock tracked.
+const parseStock = (value) => {
+  if (value === undefined || value === null || String(value).trim() === '') return null;
+  const number = Math.floor(Number(value));
+  return Number.isFinite(number) ? Math.max(0, number) : null;
+};
+
 // Where the uploaded picture sits, for example "uploads/pink-123.jpg".
 const buildFilePath = (file) => path.join('uploads', file.filename).replace(/\\/g, '/');
 
@@ -37,7 +45,8 @@ const createProduct = async (req, res) => {
       price: req.body.price,
       color_palette: toArray(req.body.color_palette),
       details: toArray(req.body.details),
-      style: toArray(req.body.style)
+      style: toArray(req.body.style),
+      stock: parseStock(req.body.stock)
     });
 
     res.status(201).json({ data: product });
@@ -90,6 +99,7 @@ const updateProduct = async (req, res) => {
     if (req.body.color_palette !== undefined) update.color_palette = toArray(req.body.color_palette);
     if (req.body.details !== undefined) update.details = toArray(req.body.details);
     if (req.body.style !== undefined) update.style = toArray(req.body.style);
+    if (req.body.stock !== undefined) update.stock = parseStock(req.body.stock);
 
     // A new picture was sent, so remember the old one and delete it afterwards.
     let oldImage = null;

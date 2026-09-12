@@ -1,11 +1,13 @@
 node_modules/
 .env
+# Build output: Render runs `npm install; npm run build` itself,
+# so the compiled site does not belong in git.
+front/dist/
 .planning/
 .claude/
 
-# Word documents (project proposal, project book) - kept out of git
-*.doc
-*.docx
-*.dotx
+# Word documents (project proposal, reference project book) live in this folder.
+# The path has a space in it; .gitignore takes it literally, no quotes needed.
+Docs help/
 # Word lock/owner files, e.g. ~$proposal.docx
 ~$*

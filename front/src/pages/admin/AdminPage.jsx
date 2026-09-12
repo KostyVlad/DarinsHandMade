@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import api, { imageUrl, authHeader } from '../../api';
+import { Link } from "react-router-dom";
+import api, { imageUrl, authHeader } from "../../api";
 
 const EMPTY = {
   model_name: "",
@@ -8,6 +9,7 @@ const EMPTY = {
   color_palette: "",
   details: "",
   style: "",
+  stock: "",
 };
 
 const AdminPage = ({ token }) => {
@@ -23,7 +25,7 @@ const AdminPage = ({ token }) => {
   // Brings the whole catalog into the table.
   const loadProducts = () => {
     api
-      .get('/api/products')
+      .get("/api/products")
       .then((response) => {
         setProducts(response.data.data);
         setLoading(false);
@@ -54,6 +56,7 @@ const AdminPage = ({ token }) => {
       color_palette: (p.color_palette || []).join(", "),
       details: (p.details || []).join(", "),
       style: (p.style || []).join(", "),
+      stock: p.stock ?? "",
     });
     setImageFile(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -75,27 +78,27 @@ const AdminPage = ({ token }) => {
     fd.append("color_palette", form.color_palette);
     fd.append("details", form.details);
     fd.append("style", form.style);
+    fd.append("stock", form.stock);
     if (imageFile) fd.append("image", imageFile);
 
     setSaving(true);
 
-    // editingId is set when the manager pressed Edit on a row,
-    // so the same form both creates a new product and updates an old one.
+    // editingId is set when the manager pressed Edit on a row, so the same
+    // form both creates a new product and updates an existing one.
     const request = editingId
       ? api.put(`/api/products/${editingId}`, fd, authHeader(token))
-      : api.post('/api/products', fd, authHeader(token));
+      : api.post("/api/products", fd, authHeader(token));
 
     request
       .then(() => {
         setMessage({ type: "success", text: editingId ? "Product updated" : "Product added" });
         resetForm();
         loadProducts();
+        setSaving(false);
       })
       .catch((error) => {
         console.log(error);
         setMessage({ type: "error", text: error.response?.data?.message || "Save failed" });
-      })
-      .finally(() => {
         setSaving(false);
       });
   };
@@ -126,16 +129,22 @@ const AdminPage = ({ token }) => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-black text-white py-12 px-8 text-center">
-        <h1 className="font-['Dorsa'] text-[72px] md:text-[110px] tracking-[14px] leading-none">
+      <div className="bg-black text-white py-12 px-6 md:px-8 text-center">
+        <h1 className="font-['Dorsa'] text-[44px] sm:text-[64px] md:text-[110px] tracking-[8px] md:tracking-[14px] leading-none">
           Manager Studio
         </h1>
-        <p className="font-['Centaur'] text-[15px] tracking-[4px] text-white/70 uppercase mt-2">
+        <p className="font-['Centaur'] text-[13px] md:text-[15px] tracking-[4px] text-white/70 uppercase mt-2">
           Add, edit and remove bags & bracelets
         </p>
+        <Link
+          to="/admin/orders"
+          className="inline-block mt-5 border border-white/40 text-white font-['Perpetua_Titling_MT'] text-[11px] tracking-[2px] uppercase px-6 py-2 no-underline hover:bg-white hover:text-black transition-colors"
+        >
+          View Orders →
+        </Link>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 items-start">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-12 items-start">
         <form onSubmit={handleSubmit} className="lg:sticky lg:top-8 border border-black/10 p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="font-['Dorsa'] text-[34px] tracking-[3px] leading-none">
@@ -187,6 +196,18 @@ const AdminPage = ({ token }) => {
                 required
               />
             </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Stock (units available — leave empty = unlimited)</label>
+            <input
+              className={inputClass}
+              type="number"
+              min="0"
+              value={form.stock}
+              onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+              placeholder="e.g. 5 — empty means unlimited"
+            />
           </div>
 
           <div>
@@ -283,6 +304,15 @@ const AdminPage = ({ token }) => {
                     <p className="font-['Perpetua_Titling_MT'] text-[12px] tracking-[1.5px] uppercase">{p.model_name}</p>
                     <p className="font-['Centaur'] text-[13px] tracking-[1px] text-black/50 capitalize">
                       {p.category} · ${p.price}
+                    </p>
+                    <p className="font-['Centaur'] text-[12px] tracking-[1px] mt-0.5">
+                      {p.stock === null || p.stock === undefined ? (
+                        <span className="text-black/40">Unlimited stock</span>
+                      ) : p.stock === 0 ? (
+                        <span className="text-red-600">Out of stock</span>
+                      ) : (
+                        <span className="text-black/60">{p.stock} in stock</span>
+                      )}
                     </p>
                     <div className="mt-3 flex gap-2">
                       <button

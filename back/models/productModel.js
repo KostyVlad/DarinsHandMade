@@ -29,6 +29,13 @@ const productSchema = new mongoose.Schema(
     },
     price: {
       type: Number
+    },
+    // How many are left. null means the stock is not being tracked
+    // for this product, so it is always available.
+    stock: {
+      type: Number,
+      default: null,
+      min: 0
     }
   },
   {
