@@ -75,7 +75,7 @@ correct even if a product is later edited or deleted.
     client prices), create pending Order, create Stripe session, return url.
   - `stripeWebhook` — verify signature, on `checkout.session.completed` mark paid.
 - `routes/orderRoutes.js` — `POST /checkout-session`, `POST /webhook`.
-- `server.js` — mount `/api/orders`; **webhook needs `express.raw({type:'application/json'})`
+- `index.js` — mount `/api/orders`; **webhook needs `express.raw({type:'application/json'})`
   mounted BEFORE `express.json()`** (Stripe signature needs the raw body).
 - Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CLIENT_URL`, `MANAGER_EMAIL`.
 
