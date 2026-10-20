@@ -135,7 +135,7 @@ const createCheckoutSession = async (req, res) => {
 
     res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('createCheckoutSession error:', err);
+    console.log(error.message);
     res.status(500).send({ message: 'Could not start checkout' });
   }
 };
@@ -174,7 +174,7 @@ const itemsTable = (order) => `
   </table>
   <p style="text-align:right;font-size:18px"><strong>Total: ${money(order.total)}</strong></p>`;
 
-async function sendCustomerReceipt(order) {
+const sendCustomerReceipt = async (order) => {
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
       <h2 style="letter-spacing:2px">DARIN'S HANDMADE</h2>
@@ -185,9 +185,9 @@ async function sendCustomerReceipt(order) {
       <p style="color:#999;font-size:13px">Handmade to order — we'll be in touch about production & delivery.</p>
     </div>`;
   await sendMail({ to: order.customer.email, subject: `Your DARIN'S HANDMADE order ${order.orderNumber}`, html });
-}
+};
 
-async function sendManagerReport(order) {
+const sendManagerReport = async (order) => {
   const to = process.env.MANAGER_EMAIL;
   if (!to) return;
   const html = `
@@ -199,7 +199,7 @@ async function sendManagerReport(order) {
       ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
     </div>`;
   await sendMail({ to, subject: `New order ${order.orderNumber} — ${money(order.total)}`, html });
-}
+};
 
 const stripeWebhook = async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -244,7 +244,7 @@ const stripeWebhook = async (req, res) => {
         }
       }
     } catch (error) {
-      console.error('Webhook order update error:', err);
+      console.log(error.message);
     }
   }
 
