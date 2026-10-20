@@ -11,3 +11,6 @@ front/dist/
 Docs help/
 # Word lock/owner files, e.g. ~$proposal.docx
 ~$*
+
+# Understand-Anything: generated knowledge graph and caches.
+.ua/

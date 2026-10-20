@@ -43,16 +43,20 @@ const signup = async (req, res) => {
     const { name, email, password, avatar } = req.body;
 
     const exists = await User.findOne({ email });
+
     if (exists) {
       return res.status(400).send({ message: 'Email already exists' });
     }
 
     // The password is never stored as it was typed, only its hash.
+
     const hashed = await bcrypt.hash(password, 10);
+
     const user = await User.create({ name, email, password: hashed, avatar: avatar || '' });
 
     const token = createToken(user);
     res.status(201).json({ token, user: publicUser(user) });
+
   } catch (error) {
     console.log(error.message);
     res.status(500).send({ message: error.message });
@@ -66,12 +70,14 @@ const signin = async (req, res) => {
 
     // select('+password') is needed because the model hides the password.
     const user = await User.findOne({ email }).select('+password');
+
     if (!user) {
       return res.status(400).send({ message: 'Invalid credentials' });
     }
 
     // compare() hashes the typed password and checks it against the stored hash.
     const isMatch = await bcrypt.compare(password, user.password);
+    
     if (!isMatch) {
       return res.status(400).send({ message: 'Invalid credentials' });
     }

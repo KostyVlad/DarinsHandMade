@@ -23,7 +23,7 @@ const sections = [
   {
     title: "Accounts",
     body:
-      "You are responsible for keeping your account credentials secure and for all activity under your account. You may sign in with email and password or with Google. Do not share your login with others.",
+      "You are responsible for keeping your account credentials secure and for all activity under your account. You sign in with your email address and password. Do not share your login with others.",
   },
   {
     title: "Intellectual Property",

@@ -3,17 +3,12 @@ const sections = [
   {
     title: "Information We Collect",
     body:
-      "When you create an account, place an order, or sign in with Google, we collect the information you provide: your name, email address, and — for orders — your shipping address and contact details. If you sign in with Google, we receive your name, email, and profile picture from your Google account.",
+      "When you create an account or place an order, we collect the information you provide: your name, email address, and — for orders — your shipping address and contact details.",
   },
   {
     title: "How We Use Your Information",
     body:
       "We use your information only to operate the store: to create and secure your account, process and deliver your orders, communicate with you about your purchases, and improve our products and service. We do not sell your personal data to third parties.",
-  },
-  {
-    title: "Google Sign-In",
-    body:
-      "If you choose to sign in with Google, we use Google's authentication to verify your identity. We only access your basic profile information (name, email, picture) and never your Google password. You can revoke this access at any time from your Google Account settings.",
   },
   {
     title: "Data Storage & Security",
