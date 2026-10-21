@@ -10,7 +10,7 @@ import sizeSmall from "./14x11.png";
 import sizeMedium from "./20x16.png";
 import sizeLarge from "./28x22.png";
 
-// Strap variants — full bag photos, one per strap style, per size.
+// Photos of the bag with every strap, for each size.
 // Mini (10×8) photos:
 import strapMiniGolden from "./10x8 handl/10x8 gold.png";
 import strapMiniSilver from "./10x8 handl/10x8 silver.png";
@@ -38,7 +38,7 @@ const STRAPS = [
     id: "mixed",
     label: "Mixed",
     price: 40,
-    // Mixed comes with a gold or silver chain — both mini and small have both photos.
+    // Mixed comes with a gold or a silver chain, so it has two sets of photos.
     chainImages: {
       gold: { mini: strapMiniMixedGold, small: strapSmallMixedGold },
       silver: { mini: strapMiniMixedSilver, small: strapSmallMixedSilver },
@@ -51,7 +51,7 @@ const STRAPS = [
 // Mixed strap has a chain color (gold/silver); we pick its photo from chainImages.
 const strapImageFor = (strap, sizeId, chainColor = "gold") => {
   const set = strap.chainImages ? strap.chainImages[chainColor] || strap.chainImages.gold : strap.images;
-  // Guard against a misconfigured strap (missing images/variant) instead of crashing the render.
+  // No photo for this strap, so show the mini photo instead of breaking the page.
   if (!set) return strap.images?.mini ?? "";
   return set[sizeId] || set.mini;
 };
@@ -124,7 +124,7 @@ const StepHeader = ({ step, total, title }) => {
 };
 
 const STEPS = ["Size", "Strap", "Color"];
-// Named indices into STEPS — avoids magic 0/1/2 checks around the render.
+// Names for the steps, so the code says STEP.SIZE instead of 0.
 const STEP = { SIZE: 0, STRAP: 1, COLOR: 2 };
 
 const CHAIN_FINISHES = [
@@ -145,7 +145,7 @@ const optionClass = (selected) => {
 const CustomStudioPage = () => {
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState({
-    size: "small", // intentional default — "Small" is the most popular size, not SIZES[0] ("Mini")
+    size: "small", // Small is chosen first because it is the most popular size
     strap: "golden",
     chainColor: "gold",
     color: COLORS[0],
@@ -168,7 +168,7 @@ const CustomStudioPage = () => {
   const previewLabel = onSizeStep ? `${sizeInfo.label} · ${sizeInfo.cm}` : `${sizeInfo.label} · ${strapLabel}`;
   const openPreviewLightbox = () => setLightbox({ image: previewImage, label: previewLabel });
 
-  // A new configuration is a new product — re-enable the Add-to-Cart button on any change.
+  // Any change makes a new bag, so the Add to Cart button works again.
   function updateConfig(patch) {
     setConfig((c) => ({ ...c, ...patch }));
     setAddedToCart(false);
@@ -191,7 +191,7 @@ const CustomStudioPage = () => {
       category: "custom",
       quantity: 1,
       config: {
-        // Structured, machine-readable record so the order is reconstructable.
+        // What the customer chose. The server counts the price from it.
         size: config.size,
         strap: config.strap,
         chainColor: strapInfo.id === "mixed" ? config.chainColor : null,
@@ -292,8 +292,8 @@ const CustomStudioPage = () => {
                       const strapImage = strapImageFor(st, config.size, config.chainColor);
                       const strapCaption = `${sizeInfo.label} · ${strapLabelFor(st, config.chainColor)}`;
                       return (
-                        // Wrapper hosts the selectable button and the zoom button as siblings
-                        // (no interactive element nested inside another — valid, accessible DOM).
+                        // The choose button and the zoom button sit side by side,
+                        // because a button may not be put inside another button.
                         <div key={st.id} className="group relative">
                           <button
                             onClick={() => updateConfig({ strap: st.id })}

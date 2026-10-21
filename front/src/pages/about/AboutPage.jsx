@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import bgImage from "./background.png";
 
-// Crystal-bead tones to match the beaded bags — cobalt, royal, cyan, aqua, clear, lilac sheen.
+// Bead colors that match the beaded bags.
 const BEAD_COLORS = ["#2F6BFF", "#1B3FD1", "#36C5F0", "#7FE3FF", "#BFEAFF", "#E8F7FF", "#9B8CFF"];
 
 const BEAD_COUNT = 44;

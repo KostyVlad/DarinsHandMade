@@ -4,6 +4,7 @@ const Order = require('../models/orderModel.js');
 const Product = require('../models/productModel.js');
 const { sendMail } = require('../utils/email');
 
+// Without the key on this machine there is no payment, and checkout answers 501.
 const stripe = process.env.STRIPE_SECRET_KEY
   ? require('stripe')(process.env.STRIPE_SECRET_KEY)
   : null;
@@ -14,12 +15,14 @@ const stripe = process.env.STRIPE_SECRET_KEY
 const SIZE_PRICES = { mini: 120, small: 180, medium: 260, large: 360 };
 const STRAP_PRICES = { golden: 30, silver: 30, mixed: 40, beaded: 45 };
 
+// Order number like DH-20261021-4821: the date and four random digits.
 const genOrderNumber = () => {
   const d = new Date();
   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   return `DH-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
 };
 
+// A guest may order too, so the token is optional here. No token means null.
 const userIdFromHeader = (req) => {
   try {
     const auth = req.headers.authorization;
@@ -32,6 +35,9 @@ const userIdFromHeader = (req) => {
   return null;
 };
 
+// Builds the order lines from the cart. The price and the stock always come
+// from our side: a catalog product from the database, a custom bag from the
+// tables above. Whatever price the browser sent is ignored.
 const buildOrderItems = async (rawItems) => {
   const items = [];
   let error = null;
@@ -64,6 +70,8 @@ const buildOrderItems = async (rawItems) => {
       const strapPrice = STRAP_PRICES[config.strap];
 
       // Not a catalog product and not a known size and strap either.
+      // typeof is checked because a made up size like "constructor" would
+      // find a built in function in the table instead of a price.
       if (typeof sizePrice !== 'number' || typeof strapPrice !== 'number') {
         error = error || `"${it.name || 'Item'}" is no longer available`;
         continue;
@@ -88,6 +96,7 @@ const buildOrderItems = async (rawItems) => {
   return { items, error };
 };
 
+// Start the payment: save the order as pending and open a Stripe payment page
 const createCheckoutSession = async (req, res) => {
   try {
     if (!stripe) {
@@ -161,6 +170,7 @@ const createCheckoutSession = async (req, res) => {
   }
 };
 
+// The helpers below build the HTML of the two order emails.
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
 const itemsTableRows = (order) =>
@@ -222,11 +232,14 @@ const sendManagerReport = async (order) => {
   await sendMail({ to, subject: `New order ${order.orderNumber} — ${money(order.total)}`, html });
 };
 
+// Stripe calls this after the customer paid. Only here does the order
+// become paid, the stock go down and the emails go out.
 const stripeWebhook = async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
     return res.status(501).send('Stripe webhook not configured');
   }
 
+  // The signature proves the request really came from Stripe.
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -242,12 +255,14 @@ const stripeWebhook = async (req, res) => {
     const session = event.data.object;
     try {
       const order = await Order.findById(session.metadata?.orderId);
+      // Stripe may send the same event twice, so only a pending order is handled.
       if (order && order.status === 'pending') {
         order.status = 'paid';
         order.payment.paymentIntentId = session.payment_intent;
         order.payment.paidAt = new Date();
         await order.save();
 
+        // The stock check is part of the query, so it never goes below zero.
         for (const it of order.items) {
           if (it.product) {
             await Product.updateOne(
@@ -275,6 +290,7 @@ const stripeWebhook = async (req, res) => {
 const ALLOWED_STATUS = ['pending', 'paid', 'in_production', 'shipped', 'completed', 'cancelled'];
 const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
 
+// Sales numbers for the manager: revenue, number of orders, top products
 const getStats = async (req, res) => {
   try {
     const days = Number(req.query.days);
@@ -324,6 +340,7 @@ const getStats = async (req, res) => {
   }
 };
 
+// All orders for the manager, with a status filter and a search box
 const getAllOrders = async (req, res) => {
   try {
     const { status, search } = req.query;
@@ -341,6 +358,7 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+// Get one order
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -352,6 +370,7 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// Move an order to another status, for example paid -> shipped
 const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -367,6 +386,7 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+// For the Thank You page: a short summary of the order, found by the Stripe session
 const getOrderBySession = async (req, res) => {
   try {
     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });

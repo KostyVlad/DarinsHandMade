@@ -10,7 +10,7 @@ const OrderSuccessPage = () => {
   const { clearCart } = useCart();
   const [order, setOrder] = useState(null);
 
-  // Payment succeeded — empty the cart and pull a small order summary to show.
+  // The payment went through, so empty the cart and show the order number.
   useEffect(() => {
     clearCart();
     if (!sessionId) return;
@@ -22,7 +22,7 @@ const OrderSuccessPage = () => {
       .catch((error) => {
         console.log(error);
       });
-    // clearCart is stable enough for this one-shot effect.
+    // This runs once when the page opens, so clearCart is left out on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 

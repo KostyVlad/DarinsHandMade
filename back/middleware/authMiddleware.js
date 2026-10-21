@@ -18,7 +18,7 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // The role is read from the database and not from the token, so a manager
-    // who lost the permission cannot keep using an old 7 day token.
+    // who lost the permission cannot keep using a token that is still valid.
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).send({ message: 'User no longer exists' });

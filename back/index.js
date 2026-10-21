@@ -87,8 +87,9 @@ app.use((err, req, res, next) => {
 const start = async () => {
   try {
     await connectDB(process.env.MONGO_URI);
-    app.listen(process.env.PORT || 5000, () =>
-      console.log('Masad netunim connected. Server is listening on port 5000...'));
+    const port = process.env.PORT || 5000;
+    app.listen(port, () =>
+      console.log(`Masad netunim connected. Server is listening on port ${port}...`));
   } catch (error) {
     console.log(error);
   }
