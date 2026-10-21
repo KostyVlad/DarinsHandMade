@@ -80,8 +80,51 @@ const removeFromCart = async (req, res) => {
   }
 };
 
+// Change how many of one product are in the cart
+const updateQuantity = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const quantity = parseInt(req.body.quantity, 10);
+    if (!quantity || quantity < 1) {
+      return res.status(400).send({ message: 'Quantity must be 1 or more' });
+    }
+
+    const cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      return res.status(404).send({ message: 'Cart not found' });
+    }
+
+    const item = cart.items.find(
+      (item) => item.product && item.product.toString() === productId
+    );
+    if (!item) {
+      return res.status(404).send({ message: 'Product is not in the cart' });
+    }
+
+    item.quantity = quantity;
+    await cart.save();
+    res.status(200).json({ data: await loadCart(cart._id) });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: error.message });
+  }
+};
+
+// Empty the cart, for example after the order was paid
+const clearCart = async (req, res) => {
+  try {
+    await Cart.findOneAndUpdate({ user: req.user.id }, { items: [] });
+    res.status(200).send({ message: 'Cart cleared' });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   getCart,
   addToCart,
-  removeFromCart
+  removeFromCart,
+  updateQuantity,
+  clearCart
 };

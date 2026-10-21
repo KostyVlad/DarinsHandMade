@@ -8,6 +8,12 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? require('stripe')(process.env.STRIPE_SECRET_KEY)
   : null;
 
+// A bag from the Custom Studio is not in the catalog, so its price is
+// counted here from the chosen size and strap, never taken from the browser.
+// The same prices are shown on the Custom Studio page.
+const SIZE_PRICES = { mini: 120, small: 180, medium: 260, large: 360 };
+const STRAP_PRICES = { golden: 30, silver: 30, mixed: 40, beaded: 45 };
+
 const genOrderNumber = () => {
   const d = new Date();
   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -53,14 +59,29 @@ const buildOrderItems = async (rawItems) => {
         custom: null,
       });
     } else {
+      const config = it.config || it.custom || {};
+      const sizePrice = SIZE_PRICES[config.size];
+      const strapPrice = STRAP_PRICES[config.strap];
+
+      // Not a catalog product and not a known size and strap either.
+      if (typeof sizePrice !== 'number' || typeof strapPrice !== 'number') {
+        error = error || `"${it.name || 'Item'}" is no longer available`;
+        continue;
+      }
+
       items.push({
         product: null,
         name: String(it.name || 'Custom item').slice(0, 120),
-        category: it.category || 'custom',
-        image: it.image || '',
-        price: Math.max(0, Number(it.price) || 0),
+        category: 'custom',
+        image: String(it.image || ''),
+        price: sizePrice + strapPrice,
         quantity,
-        custom: it.config || it.custom || null,
+        custom: {
+          size: config.size,
+          strap: config.strap,
+          chainColor: config.chainColor || null,
+          color: String(config.color || ''),
+        },
       });
     }
   }

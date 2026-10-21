@@ -116,7 +116,7 @@ res.status(400).send({ message: 'Invalid credentials' });           // ошиб�
 
 ```jsx
 <Route path='/admin'
-  element={isManager ? <AdminPage token={token} /> : <Navigate to='/login' replace />} />
+  element={isManager ? <ManagerProductsPage token={token} /> : <Navigate to='/login' replace />} />
 ```
 
 Здесь же `useEffect`, который при каждой смене токена спрашивает `/api/auth/me`. Роль берётся с сервера, а не из `localStorage` — иначе её можно было бы подделать через инструменты разработчика.

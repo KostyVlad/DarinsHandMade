@@ -26,6 +26,8 @@ const Header = ({ token, setToken, setUser, user }) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    // Custom bags of this account must not stay for the next person on this browser.
+    localStorage.removeItem("customItems");
     setToken(null);
     setUser?.(null);
     setMenuOpen(false);

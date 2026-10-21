@@ -19,6 +19,25 @@ const saveGuestCart = (items) => {
   localStorage.setItem(GUEST_KEY, JSON.stringify(items));
 };
 
+// A bag from the Custom Studio is not a product from the catalog, so the
+// server cart cannot hold it. For a signed in user it lives in this browser.
+const CUSTOM_KEY = 'customItems';
+
+const loadCustomItems = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_KEY)) || [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCustomItems = (items) => {
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(items));
+};
+
+// Custom bags get an id like "custom-1718000000000".
+const isCustom = (id) => String(id).startsWith('custom-');
+
 // Turns one row of the server cart into the simple shape the pages display.
 const toCartItem = (item) => ({
   id: item.product._id,
@@ -45,7 +64,7 @@ const CartProvider = ({ children, token }) => {
     api
       .get('/api/cart', authHeader(token))
       .then((response) => {
-        setItems(response.data.data.items.map(toCartItem));
+        setItems([...response.data.data.items.map(toCartItem), ...loadCustomItems()]);
       })
       .catch((error) => {
         console.log(error);
@@ -69,8 +88,13 @@ const CartProvider = ({ children, token }) => {
       return;
     }
 
+    // Custom bags cannot go to the server, so they move to their own list.
+    const customItems = guestItems.filter((item) => isCustom(item.id));
+    saveCustomItems([...loadCustomItems(), ...customItems]);
+
     // One request per unit, because the server adds one item at a time.
-    const requests = guestItems.flatMap((item) =>
+    const products = guestItems.filter((item) => !isCustom(item.id));
+    const requests = products.flatMap((item) =>
       Array.from({ length: item.quantity }, () =>
         api.post('/api/cart', { productId: item.id }, authHeader(token))
       )
@@ -124,6 +148,12 @@ const CartProvider = ({ children, token }) => {
       return;
     }
 
+    if (isCustom(productId)) {
+      saveCustomItems(loadCustomItems().filter((item) => item.id !== productId));
+      setItems(items.filter((item) => item.id !== productId));
+      return;
+    }
+
     api
       .delete(`/api/cart/${productId}`, authHeader(token))
       .then(() => {
@@ -135,11 +165,16 @@ const CartProvider = ({ children, token }) => {
   };
 
   // A bag built in the Custom Studio is not a product from the catalog,
-  // so it is kept only on this side.
+  // so it is kept only in this browser.
   const addCustomItem = (item) => {
     const updated = [...items, item];
     setItems(updated);
-    if (!token) saveGuestCart(updated);
+
+    if (!token) {
+      saveGuestCart(updated);
+      return;
+    }
+    saveCustomItems([...loadCustomItems(), item]);
   };
 
   const updateQuantity = (id, newQuantity) => {
@@ -148,12 +183,43 @@ const CartProvider = ({ children, token }) => {
       item.id === id ? { ...item, quantity: newQuantity } : item
     );
     setItems(updated);
-    if (!token) saveGuestCart(updated);
+
+    if (!token) {
+      saveGuestCart(updated);
+      return;
+    }
+
+    if (isCustom(id)) {
+      saveCustomItems(updated.filter((item) => isCustom(item.id)));
+      return;
+    }
+
+    // The new number is already on the screen; the server keeps it for next time.
+    api
+      .patch(`/api/cart/${id}`, { quantity: newQuantity }, authHeader(token))
+      .catch((error) => {
+        console.log(error);
+        fetchCart();
+      });
   };
 
   const clearCart = () => {
     setItems([]);
-    if (!token) localStorage.removeItem(GUEST_KEY);
+
+    if (!token) {
+      localStorage.removeItem(GUEST_KEY);
+      return;
+    }
+
+    localStorage.removeItem(CUSTOM_KEY);
+    api
+      .delete('/api/cart', authHeader(token))
+      .then(() => {
+        fetchCart();
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   const getTotalPrice = () => {

@@ -12,7 +12,7 @@ const EMPTY = {
   stock: "",
 };
 
-const AdminPage = ({ token }) => {
+const ManagerProductsPage = ({ token }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY);
@@ -339,4 +339,4 @@ const AdminPage = ({ token }) => {
   );
 };
 
-export default AdminPage;
+export default ManagerProductsPage;
