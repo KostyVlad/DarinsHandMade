@@ -48,7 +48,6 @@ index.js  (запуск сервера)
  └─ controllers/OrderController.js  (stripeWebhook, /api/orders/webhook)
 
 seed/products.js     ← запускается вручную, сайт его не вызывает
-seed/makeManager.js  ← запускается вручную
 ```
 
 ## 0.2 Сайт (папка front/)
@@ -287,7 +286,7 @@ App.jsx
 ## 1.3 back/db/connect.js — подключение к базе
 
 **Что это за файл.** Одна функция, которая подключается к MongoDB.
-**Кто подключает:** `index.js` (стр. 8), `seed/products.js` (стр. 2), `seed/makeManager.js` (стр. 2).
+**Кто подключает:** `index.js` (стр. 8), `seed/products.js` (стр. 2).
 **Что подключает:** библиотеку `mongoose`.
 
 ```js
@@ -315,7 +314,7 @@ App.jsx
 
 ## 2.1 back/models/userModel.js — пользователь
 
-**Кто подключает:** `AuthController.js` (стр. 4), `authMiddleware.js` (стр. 2), `seed/makeManager.js` (стр. 3).
+**Кто подключает:** `AuthController.js` (стр. 4), `authMiddleware.js` (стр. 2).
 
 ```js
 1  const mongoose = require('mongoose');
@@ -374,7 +373,7 @@ App.jsx
 - **стр. 9–13** — `email`: строка, обязательна, `unique: true` — в базе создаётся уникальный индекс: двух пользователей с одной почтой быть не может.
 - **стр. 14–20** — `password`: строка, обязательна. В базе здесь лежит **не пароль, а его хеш** (см. `AuthController.js`). **стр. 19** `select: false` — поле не возвращается в обычных запросах. Чтобы получить его, нужно явно попросить `.select('+password')` — это делается только при входе.
 - **стр. 21–24** — `avatar`: ссылка на картинку профиля, по умолчанию пустая строка (`default: ''`).
-- **стр. 25–28** — `role`: роль. По умолчанию `'user'` (обычный покупатель). Бывает `'manager'` и `'admin'`. Ставится только скриптом `seed/makeManager.js`.
+- **стр. 25–28** — `role`: роль. По умолчанию `'user'` (обычный покупатель). Бывает `'manager'` и `'admin'`. Меняется только вручную в базе (см. 7.2).
 - **стр. 31–35** — `resetPasswordToken`: хеш токена из ссылки «забыли пароль». По умолчанию `null`, скрыт (`select: false`).
 - **стр. 36–40** — `resetPasswordExpires`: до какого момента действует ссылка (тип `Date` — дата и время). Скрыт.
 - **стр. 43** — `timestamps: true` — Mongoose сам добавит поля `createdAt` (когда создан) и `updatedAt` (когда изменён последний раз).
@@ -2363,9 +2362,9 @@ const имя = async (req, res) => {
 
 ---
 
-# Часть 7. Сервер: служебные скрипты (seed)
+# Часть 7. Сервер: заполнение каталога и роль менеджера
 
-Эти файлы сайт **не вызывает**. Их запускают вручную из терминала в папке `back`.
+Скрипт из папки `seed` сайт **не вызывает**. Его запускают вручную из терминала в папке `back`.
 
 ## 7.1 back/seed/products.js — заполнить каталог
 
@@ -2409,47 +2408,16 @@ const имя = async (req, res) => {
 
 **back/seed/productsData.json** — массив объектов-товаров: `file_name`, `model_name`, `color_palette`, `details`, `style`, `category`, `price`. Поля `stock` там нет, поэтому после заполнения остаток не отслеживается.
 
-## 7.2 back/seed/makeManager.js — выдать роль
+## 7.2 Как назначается менеджер
 
-Запуск: `node seed/makeManager.js почта@example.com manager` (или `admin`).
+Отдельного скрипта для этого в проекте нет. Роль меняется **вручную в базе данных**:
 
-```js
-7  const start = async () => {
-8    const email = process.argv[2];
-9    const role = process.argv[3] || 'manager';
-10
-11   if (!email) {
-12     console.error('Provide an email:  node seed/makeManager.js user@example.com');
-13     process.exit(1);
-14   }
-15
-16   try {
-17     await connectDB(process.env.MONGO_URI);
-18     const user = await User.findOneAndUpdate({ email }, { role }, { new: true });
-19     if (!user) {
-20       console.error(`User with email "${email}" not found. Register with this email first.`);
-21       process.exit(1);
-22     }
-23     console.log(`Done: ${user.email} now has role="${user.role}"`);
-24     process.exit(0);
-25   } catch (error) {
-26     console.log(error.message);
-27     process.exit(1);
-28   }
-29 };
-30
-31 start();
-```
+1. Человек регистрируется на сайте обычным способом — в базе появляется документ в коллекции `users` с `role: 'user'` (значение по умолчанию из `userModel.js`, стр. 25–28).
+2. Владелец сайта открывает MongoDB Atlas → **Browse Collections** → коллекция `users`.
+3. Находит пользователя по полю `email` и меняет `role` на `manager` (или `admin`), сохраняет.
+4. Пользователь выходит и снова входит (или просто обновляет страницу): `App.jsx` спрашивает `/api/auth/me`, `protect` читает роль **из базы** — и у человека появляется ссылка MANAGE и доступ к `/admin`.
 
-- **стр. 1–5** — `dotenv`, `connectDB`, модель `User`, чтение `.env`.
-- **стр. 8** — `process.argv` — массив слов команды: `[0]` путь к node, `[1]` путь к скрипту, `[2]` — почта.
-- **стр. 9** — `[3]` — роль; если не указана — `manager`.
-- **стр. 11–14** — почту не указали — подсказка и выход с ошибкой.
-- **стр. 18** — найти пользователя по почте и поставить роль; вернуть обновлённого.
-- **стр. 19–22** — нет такого пользователя — сначала нужно зарегистрироваться на сайте.
-- **стр. 23–24** — готово.
-
-Почему роль выдаётся скриптом, а не на сайте: так на сервере нет ни одного адреса, через который можно стать менеджером.
+Почему так: на сервере нет ни одного адреса, через который можно стать менеджером. `signup` (AuthController, стр. 55) не принимает поле `role`, поэтому через регистрацию роль тоже не поменять. Изменить роль может только тот, у кого есть доступ к самой базе.
 
 
 ---
