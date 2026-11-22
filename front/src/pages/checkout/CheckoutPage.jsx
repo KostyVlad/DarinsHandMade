@@ -31,9 +31,19 @@ const CheckoutPage = () => {
     return e;
   };
 
+  // One handler for every field. The input's name ("email", "city"...)
+  // says which field of the form to change.
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: undefined });
+    const field = e.target.name;
+    const value = e.target.value;
+
+    // Copy the form and change only this field.
+    setForm({ ...form, [field]: value });
+
+    // The customer is fixing this field, so its red error goes away.
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: undefined });
+    }
   };
 
   const handleSubmit = (e) => {

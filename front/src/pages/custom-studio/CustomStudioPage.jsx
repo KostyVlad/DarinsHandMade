@@ -50,16 +50,42 @@ const STRAPS = [
 // Strap photos only exist for mini/small; other sizes fall back to the mini photo.
 // Mixed strap has a chain color (gold/silver); we pick its photo from chainImages.
 const strapImageFor = (strap, sizeId, chainColor = "gold") => {
-  const set = strap.chainImages ? strap.chainImages[chainColor] || strap.chainImages.gold : strap.images;
-  // No photo for this strap, so show the mini photo instead of breaking the page.
-  if (!set) return strap.images?.mini ?? "";
-  return set[sizeId] || set.mini;
+  // Step 1: find the set of photos for this strap ({ mini: ..., small: ... }).
+  let set;
+  if (strap.chainImages) {
+    // Mixed strap: the set depends on the chain color. Unknown color -> gold.
+    set = strap.chainImages[chainColor];
+    if (!set) {
+      set = strap.chainImages.gold;
+    }
+  } else {
+    // Any other strap has one set.
+    set = strap.images;
+  }
+
+  // No set at all: return an empty picture instead of breaking the page.
+  if (!set) {
+    return "";
+  }
+
+  // Step 2: the photo for this size. Medium and large have none, so mini is used.
+  if (set[sizeId]) {
+    return set[sizeId];
+  }
+  return set.mini;
 };
 
 // Display label for a strap; Mixed appends its chain color (e.g. "Mixed (Gold)").
 const strapLabelFor = (strap, chainColor) => {
-  if (strap.id !== "mixed") return strap.label;
-  return `${strap.label} (${chainColor === "gold" ? "Gold" : "Silver"})`;
+  if (strap.id !== "mixed") {
+    return strap.label;
+  }
+
+  let colorName = "Silver";
+  if (chainColor === "gold") {
+    colorName = "Gold";
+  }
+  return `${strap.label} (${colorName})`;
 };
 
 // A photo of the real beads for every colour Darina works with.

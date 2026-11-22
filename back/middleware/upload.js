@@ -14,12 +14,19 @@ const storage = multer.diskStorage({
   // Which name it gets. Date.now() is added so two pictures with the
   // same original name do not overwrite each other.
   filename: (req, file, cb) => {
+    // "My Bag!.JPG" -> ".jpg"
     const ext = path.extname(file.originalname).toLowerCase();
-    const base = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-z0-9]/gi, '-')
-      .toLowerCase()
-      .slice(0, 40);
+
+    // "My Bag!.JPG" -> "My Bag!"
+    let base = path.basename(file.originalname, ext);
+    // Every character that is not a letter or a digit becomes "-": "My-Bag-"
+    base = base.replace(/[^a-z0-9]/gi, '-');
+    // "my-bag-"
+    base = base.toLowerCase();
+    // A very long name is cut to 40 characters.
+    base = base.slice(0, 40);
+
+    // "my-bag--1718000000000.jpg"
     cb(null, `${base}-${Date.now()}${ext}`);
   }
 });

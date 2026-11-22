@@ -17,9 +17,18 @@ const STRAP_PRICES = { golden: 30, silver: 30, mixed: 40, beaded: 45 };
 
 // Order number like DH-20261021-4821: the date and four random digits.
 const genOrderNumber = () => {
-  const d = new Date();
-  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  return `DH-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const today = new Date();
+
+  const year = today.getFullYear();
+  // getMonth() counts from 0 (January = 0), so 1 is added.
+  // padStart turns 7 into "07", so the number always has two digits.
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  // A random number from 1000 to 9999.
+  const randomPart = Math.floor(1000 + Math.random() * 9000);
+
+  return `DH-${year}${month}${day}-${randomPart}`;
 };
 
 // A guest may order too, so the token is optional here. No token means null.
@@ -40,19 +49,33 @@ const userIdFromHeader = (req) => {
 // tables above. Whatever price the browser sent is ignored.
 const buildOrderItems = async (rawItems) => {
   const items = [];
+  // Only the first problem is kept and shown to the customer.
   let error = null;
-  for (const it of rawItems || []) {
-    const quantity = Math.max(1, parseInt(it.quantity, 10) || 1);
+
+  if (!rawItems) {
+    rawItems = [];
+  }
+
+  for (const it of rawItems) {
+    // The quantity is at least 1, even if the browser sent "abc", 0 or -5.
+    let quantity = parseInt(it.quantity, 10);
+    if (!quantity || quantity < 1) {
+      quantity = 1;
+    }
+
+    // Look for the product in the catalog, if the id looks like a real one.
     let product = null;
     if (it.id && mongoose.Types.ObjectId.isValid(it.id)) {
       product = await Product.findById(it.id);
     }
+
     if (product) {
-      if (typeof product.stock === 'number') {
+      // stock === null means the stock is not tracked, so there is nothing to check.
+      if (typeof product.stock === 'number' && !error) {
         if (product.stock <= 0) {
-          error = error || `"${product.model_name}" is out of stock`;
+          error = `"${product.model_name}" is out of stock`;
         } else if (quantity > product.stock) {
-          error = error || `Only ${product.stock} of "${product.model_name}" left in stock`;
+          error = `Only ${product.stock} of "${product.model_name}" left in stock`;
         }
       }
       items.push({
@@ -65,7 +88,15 @@ const buildOrderItems = async (rawItems) => {
         custom: null,
       });
     } else {
-      const config = it.config || it.custom || {};
+      // Not in the catalog, so it should be a bag from the Custom Studio.
+      // Its choices (size, strap...) come in "config".
+      let config = {};
+      if (it.config) {
+        config = it.config;
+      } else if (it.custom) {
+        config = it.custom;
+      }
+
       const sizePrice = SIZE_PRICES[config.size];
       const strapPrice = STRAP_PRICES[config.strap];
 
@@ -73,7 +104,9 @@ const buildOrderItems = async (rawItems) => {
       // typeof is checked because a made up size like "constructor" would
       // find a built in function in the table instead of a price.
       if (typeof sizePrice !== 'number' || typeof strapPrice !== 'number') {
-        error = error || `"${it.name || 'Item'}" is no longer available`;
+        if (!error) {
+          error = `"${it.name || 'Item'}" is no longer available`;
+        }
         continue;
       }
 
@@ -173,14 +206,18 @@ const createCheckoutSession = async (req, res) => {
 // The helpers below build the HTML of the two order emails.
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
+// One table row per item. A custom bag also gets a small grey line with
+// its choices, for example "small · golden · pink".
 const itemsTableRows = (order) =>
   order.items
     .map((it) => {
-      const spec = it.custom
-        ? `<br><span style="color:#888;font-size:12px">${[it.custom.size, it.custom.strap, it.custom.chainColor, it.custom.color]
-            .filter(Boolean)
-            .join(' · ')}</span>`
-        : '';
+      let spec = '';
+      if (it.custom) {
+        const choices = [it.custom.size, it.custom.strap, it.custom.chainColor, it.custom.color];
+        // filter(Boolean) drops the empty ones (null, ''), so no " ·  · " appears.
+        const filled = choices.filter(Boolean);
+        spec = `<br><span style="color:#888;font-size:12px">${filled.join(' · ')}</span>`;
+      }
       return `<tr>
         <td style="padding:8px 0;border-bottom:1px solid #eee">${it.name}${spec}</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">${it.quantity}</td>
@@ -189,10 +226,17 @@ const itemsTableRows = (order) =>
     })
     .join('');
 
-const deliveryLine = (order) =>
-  order.deliveryMethod === 'pickup'
-    ? 'Self pickup'
-    : `Delivery to ${[order.shipping.address, order.shipping.city, order.shipping.country].filter(Boolean).join(', ')}`;
+// "Self pickup", or "Delivery to Herzl 5, Tel Aviv, Israel".
+const deliveryLine = (order) => {
+  if (order.deliveryMethod === 'pickup') {
+    return 'Self pickup';
+  }
+
+  const parts = [order.shipping.address, order.shipping.city, order.shipping.country];
+  // Empty parts are dropped, so there is no ", ," in the text.
+  const filled = parts.filter(Boolean);
+  return `Delivery to ${filled.join(', ')}`;
+};
 
 const itemsTable = (order) => `
   <table style="width:100%;border-collapse:collapse;margin:18px 0">

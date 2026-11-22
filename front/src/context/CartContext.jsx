@@ -92,13 +92,15 @@ const CartProvider = ({ children, token }) => {
     const customItems = guestItems.filter((item) => isCustom(item.id));
     saveCustomItems([...loadCustomItems(), ...customItems]);
 
-    // One request per unit, because the server adds one item at a time.
+    // The server adds one unit per request, so a product with quantity 3
+    // is sent 3 times.
     const products = guestItems.filter((item) => !isCustom(item.id));
-    const requests = products.flatMap((item) =>
-      Array.from({ length: item.quantity }, () =>
-        api.post('/api/cart', { productId: item.id }, authHeader(token))
-      )
-    );
+    const requests = [];
+    for (const item of products) {
+      for (let i = 0; i < item.quantity; i++) {
+        requests.push(api.post('/api/cart', { productId: item.id }, authHeader(token)));
+      }
+    }
 
     Promise.allSettled(requests).then(() => {
       localStorage.removeItem(GUEST_KEY);
@@ -179,9 +181,14 @@ const CartProvider = ({ children, token }) => {
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return;
-    const updated = items.map((item) =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
+
+    // A new list where only the changed item gets the new quantity.
+    const updated = items.map((item) => {
+      if (item.id === id) {
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    });
     setItems(updated);
 
     if (!token) {

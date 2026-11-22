@@ -48,7 +48,6 @@ index.js  (запуск сервера)
  └─ controllers/OrderController.js  (stripeWebhook, /api/orders/webhook)
 
 seed/products.js     ← запускается вручную, сайт его не вызывает
-seed/makeManager.js  ← запускается вручную
 ```
 
 ## 0.2 Сайт (папка front/)
@@ -255,7 +254,7 @@ App.jsx
 - **стр. 75** — `err.name === 'MulterError'` — ошибка библиотеки multer.
 - **стр. 76–77** — тернарный оператор `условие ? да : нет`: если код ошибки `LIMIT_FILE_SIZE` (файл больше 8 МБ) — одно сообщение, иначе другое.
 - **стр. 78** — ответ 400 с сообщением в JSON. `return` останавливает функцию.
-- **стр. 80–82** — ошибка, которую бросает наш `fileFilter` в `upload.js` (стр. 32), если прислали не картинку.
+- **стр. 80–82** — ошибка, которую бросает наш `fileFilter` в `upload.js` (стр. 39), если прислали не картинку.
 - **стр. 83** — любую другую ошибку пишем в консоль сервера (видно в логах Render).
 - **стр. 84** — клиенту — общий ответ 500, без подробностей (чтобы не раскрывать внутренности сервера).
 
@@ -287,7 +286,7 @@ App.jsx
 ## 1.3 back/db/connect.js — подключение к базе
 
 **Что это за файл.** Одна функция, которая подключается к MongoDB.
-**Кто подключает:** `index.js` (стр. 8), `seed/products.js` (стр. 2), `seed/makeManager.js` (стр. 2).
+**Кто подключает:** `index.js` (стр. 8), `seed/products.js` (стр. 2).
 **Что подключает:** библиотеку `mongoose`.
 
 ```js
@@ -315,7 +314,7 @@ App.jsx
 
 ## 2.1 back/models/userModel.js — пользователь
 
-**Кто подключает:** `AuthController.js` (стр. 4), `authMiddleware.js` (стр. 2), `seed/makeManager.js` (стр. 3).
+**Кто подключает:** `AuthController.js` (стр. 4), `authMiddleware.js` (стр. 2).
 
 ```js
 1  const mongoose = require('mongoose');
@@ -374,7 +373,7 @@ App.jsx
 - **стр. 9–13** — `email`: строка, обязательна, `unique: true` — в базе создаётся уникальный индекс: двух пользователей с одной почтой быть не может.
 - **стр. 14–20** — `password`: строка, обязательна. В базе здесь лежит **не пароль, а его хеш** (см. `AuthController.js`). **стр. 19** `select: false` — поле не возвращается в обычных запросах. Чтобы получить его, нужно явно попросить `.select('+password')` — это делается только при входе.
 - **стр. 21–24** — `avatar`: ссылка на картинку профиля, по умолчанию пустая строка (`default: ''`).
-- **стр. 25–28** — `role`: роль. По умолчанию `'user'` (обычный покупатель). Бывает `'manager'` и `'admin'`. Ставится только скриптом `seed/makeManager.js`.
+- **стр. 25–28** — `role`: роль. По умолчанию `'user'` (обычный покупатель). Бывает `'manager'` и `'admin'`. Сайт его не меняет: роль ставится вручную в базе (MongoDB Atlas).
 - **стр. 31–35** — `resetPasswordToken`: хеш токена из ссылки «забыли пароль». По умолчанию `null`, скрыт (`select: false`).
 - **стр. 36–40** — `resetPasswordExpires`: до какого момента действует ссылка (тип `Date` — дата и время). Скрыт.
 - **стр. 43** — `timestamps: true` — Mongoose сам добавит поля `createdAt` (когда создан) и `updatedAt` (когда изменён последний раз).
@@ -667,15 +666,22 @@ App.jsx
 14   // Which name it gets. Date.now() is added so two pictures with the
 15   // same original name do not overwrite each other.
 16   filename: (req, file, cb) => {
-17     const ext = path.extname(file.originalname).toLowerCase();
-18     const base = path
-19       .basename(file.originalname, ext)
-20       .replace(/[^a-z0-9]/gi, '-')
-21       .toLowerCase()
-22       .slice(0, 40);
-23     cb(null, `${base}-${Date.now()}${ext}`);
-24   }
-25 });
+17     // "My Bag!.JPG" -> ".jpg"
+18     const ext = path.extname(file.originalname).toLowerCase();
+19
+20     // "My Bag!.JPG" -> "My Bag!"
+21     let base = path.basename(file.originalname, ext);
+22     // Every character that is not a letter or a digit becomes "-": "My-Bag-"
+23     base = base.replace(/[^a-z0-9]/gi, '-');
+24     // "my-bag-"
+25     base = base.toLowerCase();
+26     // A very long name is cut to 40 characters.
+27     base = base.slice(0, 40);
+28
+29     // "my-bag--1718000000000.jpg"
+30     cb(null, `${base}-${Date.now()}${ext}`);
+31   }
+32 });
 ```
 
 - **стр. 6** — `multer.diskStorage({...})` — «хранилище на диске». Получает две функции: куда класть и как назвать. Multer сам вызывает их для каждого файла.
@@ -684,40 +690,40 @@ App.jsx
 - **стр. 10** — `fs.mkdirSync` создаёт папку, если её нет. `recursive: true` — не ругаться, если уже есть.
 - **стр. 11** — `cb(null, dir)`: первый аргумент — ошибка (`null` — ошибки нет), второй — папка.
 - **стр. 16** — функция `filename` — какое имя дать файлу.
-- **стр. 17** — `path.extname('Pink Bag.JPG')` → `.JPG`, `.toLowerCase()` → `.jpg`.
-- **стр. 18–19** — `path.basename(имя, расширение)` → имя без расширения: `Pink Bag`.
-- **стр. 20** — регулярное выражение `/[^a-z0-9]/gi`: всё, что **не** буква и не цифра (`^` внутри скобок — «не»), заменить на `-`. `g` — везде, `i` — без учёта регистра. `Pink Bag` → `Pink-Bag`.
-- **стр. 21** — в нижний регистр: `pink-bag`.
-- **стр. 22** — обрезать до 40 символов.
-- **стр. 23** — итоговое имя: `pink-bag-1718000000000.jpg`. `Date.now()` — текущее время в миллисекундах, поэтому два файла с одинаковым названием не перезапишут друг друга.
+- **стр. 18** — `path.extname('Pink Bag.JPG')` → `.JPG`, `.toLowerCase()` → `.jpg`.
+- **стр. 21** — `path.basename(имя, расширение)` → имя без расширения: `Pink Bag`. `let`, потому что дальше переменная `base` меняется по шагам.
+- **стр. 23** — регулярное выражение `/[^a-z0-9]/gi`: всё, что **не** буква и не цифра (`^` внутри скобок — «не»), заменить на `-`. `g` — везде, `i` — без учёта регистра. `Pink Bag` → `Pink-Bag`.
+- **стр. 25** — в нижний регистр: `pink-bag`.
+- **стр. 27** — обрезать до 40 символов.
+- **стр. 30** — итоговое имя: `pink-bag-1718000000000.jpg`. `Date.now()` — текущее время в миллисекундах, поэтому два файла с одинаковым названием не перезапишут друг друга.
 
 ```js
-27 // Only real pictures are accepted, so nobody can upload a script.
-28 const fileFilter = (req, file, cb) => {
-29   if (/^image\//.test(file.mimetype)) {
-30     return cb(null, true);
-31   }
-32   cb(new Error('Only image files are allowed'), false);
-33 };
+34 // Only real pictures are accepted, so nobody can upload a script.
+35 const fileFilter = (req, file, cb) => {
+36   if (/^image\//.test(file.mimetype)) {
+37     return cb(null, true);
+38   }
+39   cb(new Error('Only image files are allowed'), false);
+40 };
 ```
 
-- **стр. 28** — `fileFilter` — функция-фильтр, multer вызывает её до сохранения.
-- **стр. 29** — `file.mimetype` — тип файла, например `image/jpeg`. Регулярное выражение `/^image\//` — «начинается с `image/`». `.test(...)` возвращает `true` или `false`.
-- **стр. 30** — картинка — `cb(null, true)` — принять.
-- **стр. 32** — не картинка — отдаём ошибку. Её поймает обработчик ошибок в `index.js` (стр. 80) и ответит 400.
+- **стр. 35** — `fileFilter` — функция-фильтр, multer вызывает её до сохранения.
+- **стр. 36** — `file.mimetype` — тип файла, например `image/jpeg`. Регулярное выражение `/^image\//` — «начинается с `image/`». `.test(...)` возвращает `true` или `false`.
+- **стр. 37** — картинка — `cb(null, true)` — принять.
+- **стр. 39** — не картинка — отдаём ошибку. Её поймает обработчик ошибок в `index.js` (стр. 80) и ответит 400.
 
 ```js
-35 const upload = multer({
-36   storage,
-37   fileFilter,
-38   limits: { fileSize: 8 * 1024 * 1024 }
-39 });
-40
-41 module.exports = upload;
+42 const upload = multer({
+43   storage,
+44   fileFilter,
+45   limits: { fileSize: 8 * 1024 * 1024 }
+46 });
+47
+48 module.exports = upload;
 ```
 
-- **стр. 35–39** — создаём сам объект multer с тремя настройками. `storage` и `fileFilter` — короткая запись `storage: storage`. `limits.fileSize` — максимум 8 МБ (8 × 1024 × 1024 байт). Больше — ошибка `LIMIT_FILE_SIZE`, обрабатывается в `index.js` (стр. 77).
-- **стр. 41** — экспорт. В роутере используется как `upload.single('image')` — «в форме одно поле-файл с именем `image`». После этого контроллер получает файл в `req.file`, а текстовые поля формы — в `req.body`.
+- **стр. 42–46** — создаём сам объект multer с тремя настройками. `storage` и `fileFilter` — короткая запись `storage: storage`. `limits.fileSize` — максимум 8 МБ (8 × 1024 × 1024 байт). Больше — ошибка `LIMIT_FILE_SIZE`, обрабатывается в `index.js` (стр. 77).
+- **стр. 48** — экспорт. В роутере используется как `upload.single('image')` — «в форме одно поле-файл с именем `image`». После этого контроллер получает файл в `req.file`, а текстовые поля формы — в `req.body`.
 
 ## 3.4 back/middleware/validate.js — проверка форм входа и регистрации
 
@@ -874,7 +880,7 @@ App.jsx
 ```
 
 **Функция `sendMail`.**
-- **Кто вызывает:** `forgotPassword` (AuthController, стр. 114), `sendCustomerReceipt` и `sendManagerReport` (OrderController, стр. 218 и 232).
+- **Кто вызывает:** `forgotPassword` (AuthController, стр. 114), `sendCustomerReceipt` и `sendManagerReport` (OrderController, стр. 262 и 276).
 - **Что вызывает:** `resend.emails.send` — запрос в сервис Resend через интернет.
 - **Получает:** объект `{ to, subject, html }` — кому, тема, текст письма в HTML.
 
@@ -1351,214 +1357,260 @@ const имя = async (req, res) => {
 **Кто подключает:** `productsRoute.js` (стр. 2–8).
 **Что подключает:** `path` (стр. 1), `fs` (стр. 2), модель `Product` (стр. 3).
 
-### Вспомогательные функции (стр. 5–29)
+### Вспомогательные функции (стр. 5–67)
 
 ```js
 5  // The form sends color_palette / details / style as one string
 6  // ("Pink, White"), so we turn it back into an array before saving.
 7  const toArray = (value) => {
-8    if (Array.isArray(value)) return value;
-9    if (typeof value !== 'string') return [];
-10   return value.split(',').map((item) => item.trim()).filter(Boolean);
-11 };
+8    // Already an array: nothing to do.
+9    if (Array.isArray(value)) {
+10     return value;
+11   }
+12
+13   // Not text either (for example undefined): an empty list.
+14   if (typeof value !== 'string') {
+15     return [];
+16   }
+17
+18   // "Pink, White ," -> ["Pink", " White ", ""]
+19   const parts = value.split(',');
+20   // -> ["Pink", "White", ""]
+21   const trimmed = parts.map((item) => item.trim());
+22   // -> ["Pink", "White"]  (empty strings are dropped)
+23   return trimmed.filter(Boolean);
+24 };
 ```
 
-**Функция `toArray(value)`** — превращает строку из формы в массив. Вызывается из `createProduct` (стр. 46–48) и `updateProduct` (стр. 99–101).
-- **стр. 8** — уже массив — вернуть как есть (`Array.isArray` — встроенная проверка).
-- **стр. 9** — не строка (например, поле не прислали) — пустой массив.
-- **стр. 10** — `"Pink, White,"` → `split(',')` → `["Pink", " White", ""]` → `map(item => item.trim())` → `["Pink", "White", ""]` → `filter(Boolean)` (оставить только «непустые») → `["Pink", "White"]`.
+**Функция `toArray(value)`** — превращает строку из формы в массив. Вызывается из `createProduct` (стр. 84–86) и `updateProduct` (стр. 137–139).
+- **стр. 9–11** — уже массив — вернуть как есть (`Array.isArray` — встроенная проверка).
+- **стр. 14–16** — не строка (например, поле не прислали) — пустой массив.
+- **стр. 19** — `split(',')` режет строку по запятым: `"Pink, White,"` → `["Pink", " White", ""]`.
+- **стр. 21** — `map(item => item.trim())` убирает пробелы по краям каждого кусочка → `["Pink", "White", ""]`.
+- **стр. 23** — `filter(Boolean)` оставляет только непустые → `["Pink", "White"]`.
 
 ```js
-13 // The stock field arrives from the form as text. null means the manager
-14 // left it empty, so this product is not stock tracked.
-15 const parseStock = (value) => {
-16   if (value === undefined || value === null || String(value).trim() === '') return null;
-17   const number = Math.floor(Number(value));
-18   return Number.isFinite(number) ? Math.max(0, number) : null;
-19 };
+26 // The stock field arrives from the form as text. null means the manager
+27 // left it empty, so this product is not stock tracked.
+28 const parseStock = (value) => {
+29   // Empty field: stock is not tracked for this product
+30   if (value === undefined || value === null || String(value).trim() === '') {
+31     return null;
+32   }
+33
+34   const number = Math.floor(Number(value));
+35
+36   // Not a number (e.g. "abc"): also not tracked
+37   if (!Number.isFinite(number)) {
+38     return null;
+39   }
+40
+41   // Stock can't be negative
+42   if (number < 0) {
+43     return 0;
+44   }
+45
+46   return number;
+47 };
 ```
 
-**Функция `parseStock(value)`** — превращает поле «остаток» в число или `null`. Вызывается из `createProduct` (стр. 49) и `updateProduct` (стр. 102).
-- **стр. 16** — поле пустое — `null` (остаток не отслеживается).
-- **стр. 17** — `Number("5")` → 5; `Math.floor` — отбросить дробную часть.
-- **стр. 18** — `Number.isFinite` — настоящее ли это число (не `NaN` от текста «abc»). Если да — `Math.max(0, number)` (не меньше нуля), иначе `null`.
+**Функция `parseStock(value)`** — превращает поле «остаток» в число или `null`. Вызывается из `createProduct` (стр. 87) и `updateProduct` (стр. 140).
+- **стр. 30–32** — поле пустое — `null` (остаток не отслеживается). `||` — «или»: не прислали, прислали пустоту или одни пробелы (`trim()` убирает пробелы по краям).
+- **стр. 34** — `Number("5")` → 5; `Math.floor` — отбросить дробную часть (`7.9` → `7`).
+- **стр. 37–39** — `Number.isFinite` — настоящее ли это число. Для текста «abc» получится `NaN` — тогда тоже `null`.
+- **стр. 42–44** — отрицательного склада не бывает: `-3` → `0`.
+- **стр. 46** — все проверки пройдены — вернуть число.
 
 ```js
-21 // Where the uploaded picture sits, for example "uploads/pink-123.jpg".
-22 const buildFilePath = (file) => path.join('uploads', file.filename).replace(/\\/g, '/');
+49 // Where the uploaded picture sits, for example "uploads/pink-123.jpg".
+50 const buildFilePath = (file) => {
+51   // On Windows path.join gives "uploads\pink-123.jpg" (backslash).
+52   const filePath = path.join('uploads', file.filename);
+53   // A web address needs "/", so every "\" is replaced with "/".
+54   return filePath.replace(/\\/g, '/');
+55 };
 ```
 
-**Функция `buildFilePath(file)`** — путь к загруженной картинке для записи в базу. `file.filename` — имя, которое дал `upload.js`. `path.join` на Windows ставит `\`, поэтому `replace(/\\/g, '/')` меняет все обратные слеши на обычные — этот путь потом станет частью адреса в браузере. Вызывается из `createProduct` (стр. 42, 55) и `updateProduct` (стр. 107, 119).
+**Функция `buildFilePath(file)`** — путь к загруженной картинке для записи в базу. `file.filename` — имя, которое дал `upload.js`.
+- **стр. 52** — `path.join` склеивает папку и имя. На Windows он ставит `\`: `uploads\pink-123.jpg`.
+- **стр. 54** — `replace(/\\/g, '/')` меняет все обратные слеши на обычные — этот путь потом станет частью адреса в браузере.
+
+Вызывается из `createProduct` (стр. 80, 93) и `updateProduct` (стр. 145, 157).
 
 ```js
-24 // Deletes an old picture from the disk after the product was replaced or removed.
-25 const removeImageFile = (fileName) => {
-26   if (!fileName) return;
-27   const fullPath = path.join(__dirname, '..', fileName);
-28   fs.promises.unlink(fullPath).catch(() => {});
-29 };
+57 // Deletes an old picture from the disk after the product was replaced or removed.
+58 const removeImageFile = (fileName) => {
+59   if (!fileName) {
+60     return;
+61   }
+62
+63   const fullPath = path.join(__dirname, '..', fileName);
+64
+65   // If the file is already gone, there is nothing to do, so the error is ignored.
+66   fs.promises.unlink(fullPath).catch(() => {});
+67 };
 ```
 
-**Функция `removeImageFile(fileName)`** — удаляет файл картинки с диска. Вызывается из `createProduct` (стр. 55), `updateProduct` (стр. 116, 119), `deleteProduct` (стр. 133).
-- **стр. 26** — имени нет — ничего не делаем.
-- **стр. 27** — полный путь: `back/controllers` + `..` + `uploads/xxx.jpg` → `back/uploads/xxx.jpg`.
-- **стр. 28** — `fs.promises.unlink` — удалить файл. `.catch(() => {})` — если файла уже нет, ошибку молча игнорируем.
+**Функция `removeImageFile(fileName)`** — удаляет файл картинки с диска. Вызывается из `createProduct` (стр. 93), `updateProduct` (стр. 154, 157), `deleteProduct` (стр. 171).
+- **стр. 59–61** — имени нет — ничего не делаем.
+- **стр. 63** — полный путь: `back/controllers` + `..` + `uploads/xxx.jpg` → `back/uploads/xxx.jpg`.
+- **стр. 66** — `fs.promises.unlink` — удалить файл. `.catch(() => {})` — если файла уже нет, ошибку молча игнорируем.
 
-### Функция `createProduct` — создать товар (стр. 32–59)
+### Функция `createProduct` — создать товар (стр. 70–97)
 
 - **Кто вызывает:** `productsRoute.js` стр. 21, `POST /api/products`, после `protect`, `restrictTo`, `upload.single('image')`. С фронта — `ManagerProductsPage.jsx`.
 - **Что вызывает:** `Product.create` (база), `buildFilePath`, `toArray`, `parseStock`, `removeImageFile`.
 - **Получает:** `req.file` (картинка от multer), `req.body` (текстовые поля формы).
 
 ```js
-32 const createProduct = async (req, res) => {
-33   try {
-34     if (!req.file) {
-35       return res.status(400).send({ message: 'Product image is required' });
-36     }
-37     if (!req.body.model_name || !req.body.category) {
-38       return res.status(400).send({ message: 'Send required fields: model_name, category' });
-39     }
-40
-41     const product = await Product.create({
-42       file_name: buildFilePath(req.file),
-43       model_name: req.body.model_name,
-44       category: req.body.category,
-45       price: req.body.price,
-46       color_palette: toArray(req.body.color_palette),
-47       details: toArray(req.body.details),
-48       style: toArray(req.body.style),
-49       stock: parseStock(req.body.stock)
-50     });
-51
-52     res.status(201).json({ data: product });
-53   } catch (error) {
-54     // The product was not saved, so the uploaded picture is not needed.
-55     if (req.file) removeImageFile(buildFilePath(req.file));
-56     console.log(error.message);
-57     res.status(400).send({ message: error.message });
-58   }
-59 };
+70 const createProduct = async (req, res) => {
+71   try {
+72     if (!req.file) {
+73       return res.status(400).send({ message: 'Product image is required' });
+74     }
+75     if (!req.body.model_name || !req.body.category) {
+76       return res.status(400).send({ message: 'Send required fields: model_name, category' });
+77     }
+78
+79     const product = await Product.create({
+80       file_name: buildFilePath(req.file),
+81       model_name: req.body.model_name,
+82       category: req.body.category,
+83       price: req.body.price,
+84       color_palette: toArray(req.body.color_palette),
+85       details: toArray(req.body.details),
+86       style: toArray(req.body.style),
+87       stock: parseStock(req.body.stock)
+88     });
+89
+90     res.status(201).json({ data: product });
+91   } catch (error) {
+92     // The product was not saved, so the uploaded picture is not needed.
+93     if (req.file) removeImageFile(buildFilePath(req.file));
+94     console.log(error.message);
+95     res.status(400).send({ message: error.message });
+96   }
+97 };
 ```
 
-- **стр. 34–36** — картинки нет — 400. `req.file` заполняет multer.
-- **стр. 37–39** — нет названия или категории — 400.
-- **стр. 41–50** — `Product.create` сохраняет товар. Каждое поле: путь к картинке; название; категория (Mongoose проверит `enum`); цена (строка `"120"` из формы — Mongoose сам превратит в число); три списка через `toArray`; остаток через `parseStock`.
-- **стр. 52** — 201 и созданный товар.
-- **стр. 55** — если сохранить не удалось (например, категория не из списка) — картинка уже лежит на диске, удаляем её, чтобы не копился мусор.
-- **стр. 57** — ответ 400 с текстом ошибки Mongoose (обычно это ошибка данных).
+- **стр. 72–74** — картинки нет — 400. `req.file` заполняет multer.
+- **стр. 75–77** — нет названия или категории — 400.
+- **стр. 79–88** — `Product.create` сохраняет товар. Каждое поле: путь к картинке; название; категория (Mongoose проверит `enum`); цена (строка `"120"` из формы — Mongoose сам превратит в число); три списка через `toArray`; остаток через `parseStock`.
+- **стр. 90** — 201 и созданный товар.
+- **стр. 93** — если сохранить не удалось (например, категория не из списка) — картинка уже лежит на диске, удаляем её, чтобы не копился мусор.
+- **стр. 95** — ответ 400 с текстом ошибки Mongoose (обычно это ошибка данных).
 
-### Функция `getAllProducts` — все товары (стр. 62–70)
+### Функция `getAllProducts` — все товары (стр. 100–108)
 
 ```js
-62 const getAllProducts = async (req, res) => {
-63   try {
-64     const products = await Product.find({});
-65     res.status(200).json({ count: products.length, data: products });
+100 const getAllProducts = async (req, res) => {
+101   try {
+102     const products = await Product.find({});
+103     res.status(200).json({ count: products.length, data: products });
 ...
-70 };
+108 };
 ```
 
 - **Кто вызывает:** `GET /api/products` (`productsRoute.js` стр. 16). Фронт: `BeadedBagsPage`, `BraceletsPage`, `ManagerProductsPage`.
-- **стр. 64** — `Product.find({})` — все документы коллекции `products` (пустое условие — без фильтра). Результат — массив.
-- **стр. 65** — ответ: количество и массив товаров. Фронт берёт `response.data.data`.
+- **стр. 102** — `Product.find({})` — все документы коллекции `products` (пустое условие — без фильтра). Результат — массив.
+- **стр. 103** — ответ: количество и массив товаров. Фронт берёт `response.data.data`.
 
-### Функция `getProductById` — один товар (стр. 73–84)
+### Функция `getProductById` — один товар (стр. 111–122)
 
 ```js
-73 const getProductById = async (req, res) => {
-74   try {
-75     const product = await Product.findById(req.params.id);
-76     if (!product) {
-77       return res.status(404).send({ message: 'Product not found' });
-78     }
-79     res.status(200).json({ data: product });
+111 const getProductById = async (req, res) => {
+112   try {
+113     const product = await Product.findById(req.params.id);
+114     if (!product) {
+115       return res.status(404).send({ message: 'Product not found' });
+116     }
+117     res.status(200).json({ data: product });
 ...
-84 };
+122 };
 ```
 
 - **Кто вызывает:** `GET /api/products/:id` (стр. 17). Фронт: `ProductDetailPage`.
-- **стр. 75** — `req.params.id` — часть адреса после `/api/products/`. `Product.findById` ищет по `_id`.
-- **стр. 76–78** — не найден — 404. (Если id вообще не похож на id MongoDB, Mongoose бросит ошибку → `catch` → 500.)
-- **стр. 79** — 200 и товар.
+- **стр. 113** — `req.params.id` — часть адреса после `/api/products/`. `Product.findById` ищет по `_id`.
+- **стр. 114–116** — не найден — 404. (Если id вообще не похож на id MongoDB, Mongoose бросит ошибку → `catch` → 500.)
+- **стр. 117** — 200 и товар.
 
-### Функция `updateProduct` — изменить товар (стр. 87–123)
+### Функция `updateProduct` — изменить товар (стр. 125–161)
 
 - **Кто вызывает:** `PUT /api/products/:id` (стр. 22) после `protect`, `restrictTo`, `upload.single('image')`. Фронт: `ManagerProductsPage` — кнопка Save changes.
 - **Что вызывает:** `Product.findById`, `Product.findByIdAndUpdate` (база), `toArray`, `parseStock`, `buildFilePath`, `removeImageFile`.
 
 ```js
-87  const updateProduct = async (req, res) => {
-88    try {
-89      const product = await Product.findById(req.params.id);
-90      if (!product) {
-91        return res.status(404).send({ message: 'Product not found' });
-92      }
-93
-94      // Only the fields the manager actually filled in are changed.
-95      const update = {};
-96      if (req.body.model_name !== undefined) update.model_name = req.body.model_name;
-97      if (req.body.category !== undefined) update.category = req.body.category;
-98      if (req.body.price !== undefined) update.price = req.body.price;
-99      if (req.body.color_palette !== undefined) update.color_palette = toArray(req.body.color_palette);
-100     if (req.body.details !== undefined) update.details = toArray(req.body.details);
-101     if (req.body.style !== undefined) update.style = toArray(req.body.style);
-102     if (req.body.stock !== undefined) update.stock = parseStock(req.body.stock);
-103
-104     // A new picture was sent, so remember the old one and delete it afterwards.
-105     let oldImage = null;
-106     if (req.file) {
-107       update.file_name = buildFilePath(req.file);
-108       oldImage = product.file_name;
-109     }
-110
-111     const result = await Product.findByIdAndUpdate(req.params.id, update, {
-112       new: true,
-113       runValidators: true
-114     });
-115
-116     if (oldImage) removeImageFile(oldImage);
-117     res.status(200).json({ data: result });
-118   } catch (error) {
-119     if (req.file) removeImageFile(buildFilePath(req.file));
-120     console.log(error.message);
-121     res.status(400).send({ message: error.message });
-122   }
-123 };
+125 const updateProduct = async (req, res) => {
+126   try {
+127     const product = await Product.findById(req.params.id);
+128     if (!product) {
+129       return res.status(404).send({ message: 'Product not found' });
+130     }
+131
+132     // Only the fields the manager actually filled in are changed.
+133     const update = {};
+134     if (req.body.model_name !== undefined) update.model_name = req.body.model_name;
+135     if (req.body.category !== undefined) update.category = req.body.category;
+136     if (req.body.price !== undefined) update.price = req.body.price;
+137     if (req.body.color_palette !== undefined) update.color_palette = toArray(req.body.color_palette);
+138     if (req.body.details !== undefined) update.details = toArray(req.body.details);
+139     if (req.body.style !== undefined) update.style = toArray(req.body.style);
+140     if (req.body.stock !== undefined) update.stock = parseStock(req.body.stock);
+141
+142     // A new picture was sent, so remember the old one and delete it afterwards.
+143     let oldImage = null;
+144     if (req.file) {
+145       update.file_name = buildFilePath(req.file);
+146       oldImage = product.file_name;
+147     }
+148
+149     const result = await Product.findByIdAndUpdate(req.params.id, update, {
+150       new: true,
+151       runValidators: true
+152     });
+153
+154     if (oldImage) removeImageFile(oldImage);
+155     res.status(200).json({ data: result });
+156   } catch (error) {
+157     if (req.file) removeImageFile(buildFilePath(req.file));
+158     console.log(error.message);
+159     res.status(400).send({ message: error.message });
+160   }
+161 };
 ```
 
-- **стр. 89–92** — сначала находим товар (нужен путь старой картинки). Нет — 404.
-- **стр. 95** — пустой объект изменений.
-- **стр. 96–102** — каждое поле добавляется в `update`, только если его прислали (`!== undefined`). Так не прислали — не трогаем.
-- **стр. 105–109** — если пришла новая картинка: записываем новый путь и запоминаем старый.
-- **стр. 111–114** — `findByIdAndUpdate(id, изменения, настройки)`: найти и обновить одним запросом. `new: true` — вернуть **обновлённый** документ (без этого вернулся бы старый). `runValidators: true` — проверить правила схемы (`enum`, `min`) и при обновлении, по умолчанию Mongoose проверяет их только при создании.
-- **стр. 116** — обновление прошло — удаляем старую картинку с диска.
-- **стр. 117** — 200 и обновлённый товар.
-- **стр. 119** — ошибка — удаляем только что загруженную новую картинку.
+- **стр. 127–130** — сначала находим товар (нужен путь старой картинки). Нет — 404.
+- **стр. 133** — пустой объект изменений.
+- **стр. 134–140** — каждое поле добавляется в `update`, только если его прислали (`!== undefined`). Так не прислали — не трогаем.
+- **стр. 143–147** — если пришла новая картинка: записываем новый путь и запоминаем старый.
+- **стр. 149–152** — `findByIdAndUpdate(id, изменения, настройки)`: найти и обновить одним запросом. `new: true` — вернуть **обновлённый** документ (без этого вернулся бы старый). `runValidators: true` — проверить правила схемы (`enum`, `min`) и при обновлении, по умолчанию Mongoose проверяет их только при создании.
+- **стр. 154** — обновление прошло — удаляем старую картинку с диска.
+- **стр. 155** — 200 и обновлённый товар.
+- **стр. 157** — ошибка — удаляем только что загруженную новую картинку.
 
-### Функция `deleteProduct` — удалить товар (стр. 126–139)
+### Функция `deleteProduct` — удалить товар (стр. 164–177)
 
 ```js
-126 const deleteProduct = async (req, res) => {
-127   try {
-128     const result = await Product.findByIdAndDelete(req.params.id);
-129     if (!result) {
-130       return res.status(404).send({ message: 'Product not found' });
-131     }
-132
-133     removeImageFile(result.file_name);
-134     res.status(200).send({ message: 'Product deleted successfully' });
+164 const deleteProduct = async (req, res) => {
+165   try {
+166     const result = await Product.findByIdAndDelete(req.params.id);
+167     if (!result) {
+168       return res.status(404).send({ message: 'Product not found' });
+169     }
+170
+171     removeImageFile(result.file_name);
+172     res.status(200).send({ message: 'Product deleted successfully' });
 ...
-139 };
+177 };
 ```
 
 - **Кто вызывает:** `DELETE /api/products/:id` (стр. 23). Фронт: `ManagerProductsPage` — кнопка Delete.
-- **стр. 128** — `findByIdAndDelete` — найти и удалить; возвращает удалённый документ (или `null`).
-- **стр. 129–131** — не было такого — 404.
-- **стр. 133** — удаляем файл его картинки.
-- **стр. 134** — 200 с сообщением.
+- **стр. 166** — `findByIdAndDelete` — найти и удалить; возвращает удалённый документ (или `null`).
+- **стр. 167–169** — не было такого — 404.
+- **стр. 171** — удаляем файл его картинки.
+- **стр. 172** — 200 с сообщением.
 
-- **стр. 141–147** — экспорт пяти функций.
+- **стр. 179–185** — экспорт пяти функций.
 
 ## 6.3 back/controllers/CartController.js — корзина вошедшего пользователя
 
@@ -1737,8 +1789,8 @@ const имя = async (req, res) => {
 10   : null;
 ```
 
-- **стр. 1** — Mongoose — здесь нужен для проверки `mongoose.Types.ObjectId.isValid` (стр. 47).
-- **стр. 2** — `jsonwebtoken` — чтобы достать id покупателя из токена, если он вошёл (стр. 30).
+- **стр. 1** — Mongoose — здесь нужен для проверки `mongoose.Types.ObjectId.isValid` (стр. 68).
+- **стр. 2** — `jsonwebtoken` — чтобы достать id покупателя из токена, если он вошёл (стр. 39).
 - **стр. 3** — модель `Order` → коллекция `orders`.
 - **стр. 4** — модель `Product` — цены и остатки товаров.
 - **стр. 5** — `sendMail` — письма о заказе.
@@ -1755,150 +1807,187 @@ const имя = async (req, res) => {
 - **стр. 15** — цены размеров сумки из конструктора. Объект: ключ — id размера, значение — цена в долларах. `SIZE_PRICES['small']` → 180.
 - **стр. 16** — цены ремешков. Те же цифры показаны в `CustomStudioPage.jsx` (стр. 27–48).
 
-### Функция `genOrderNumber` (стр. 19–23)
+### Функция `genOrderNumber` (стр. 19–32)
 
 ```js
 18 // Order number like DH-20261021-4821: the date and four random digits.
 19 const genOrderNumber = () => {
-20   const d = new Date();
-21   const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-22   return `DH-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
-23 };
+20   const today = new Date();
+21
+22   const year = today.getFullYear();
+23   // getMonth() counts from 0 (January = 0), so 1 is added.
+24   // padStart turns 7 into "07", so the number always has two digits.
+25   const month = String(today.getMonth() + 1).padStart(2, '0');
+26   const day = String(today.getDate()).padStart(2, '0');
+27
+28   // A random number from 1000 to 9999.
+29   const randomPart = Math.floor(1000 + Math.random() * 9000);
+30
+31   return `DH-${year}${month}${day}-${randomPart}`;
+32 };
 ```
 
-- **Кто вызывает:** `createCheckoutSession` (стр. 127).
+- **Кто вызывает:** `createCheckoutSession` (стр. 160).
 - **стр. 20** — текущая дата и время.
-- **стр. 21** — год + месяц + день в виде `20261021`. `getMonth()` считает месяцы с 0, поэтому `+ 1`. `padStart(2, '0')` дописывает ноль слева: `5` → `05`.
-- **стр. 22** — `Math.random()` — случайное число от 0 до 1; `1000 + random × 9000` — от 1000 до 9999; `Math.floor` — без дробной части. Результат: `DH-20261021-4821`.
+- **стр. 22** — год: `2026`.
+- **стр. 25** — месяц. `getMonth()` считает месяцы с 0 (январь — 0), поэтому `+ 1`. `String(...)` делает из числа строку, а `padStart(2, '0')` дописывает ноль слева: `5` → `05`.
+- **стр. 26** — день, тоже двумя цифрами.
+- **стр. 29** — `Math.random()` — случайное число от 0 до 1; `1000 + random × 9000` — от 1000 до 9999; `Math.floor` — без дробной части.
+- **стр. 31** — склеиваем: `DH-20261021-4821`.
 
-### Функция `userIdFromHeader(req)` (стр. 26–36)
+### Функция `userIdFromHeader(req)` (стр. 35–45)
 
 ```js
-25 // A guest may order too, so the token is optional here. No token means null.
-26 const userIdFromHeader = (req) => {
-27   try {
-28     const auth = req.headers.authorization;
-29     if (auth?.startsWith('Bearer ')) {
-30       return jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET).id;
-31     }
-32   } catch {
-33     return null;
-34   }
-35   return null;
-36 };
+34 // A guest may order too, so the token is optional here. No token means null.
+35 const userIdFromHeader = (req) => {
+36   try {
+37     const auth = req.headers.authorization;
+38     if (auth?.startsWith('Bearer ')) {
+39       return jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET).id;
+40     }
+41   } catch {
+42     return null;
+43   }
+44   return null;
+45 };
 ```
 
-- **Кто вызывает:** `createCheckoutSession` (стр. 128).
+- **Кто вызывает:** `createCheckoutSession` (стр. 161).
 - **Зачем:** адрес оформления открыт и гостю, поэтому `protect` здесь не стоит. Но если покупатель вошёл, хочется записать его id в заказ.
-- **стр. 28** — заголовок `Authorization`.
-- **стр. 29** — `auth?.startsWith(...)` — `?.` защищает от ошибки, если заголовка нет (`undefined`).
-- **стр. 30** — проверяем токен (как в `protect`) и берём из него `id`.
-- **стр. 32–34** — токен плохой — `null` (заказ будет гостевым, без ошибки).
-- **стр. 35** — заголовка нет — `null`.
+- **стр. 37** — заголовок `Authorization`.
+- **стр. 38** — `auth?.startsWith(...)` — `?.` защищает от ошибки, если заголовка нет (`undefined`).
+- **стр. 39** — проверяем токен (как в `protect`) и берём из него `id`.
+- **стр. 41–43** — токен плохой — `null` (заказ будет гостевым, без ошибки).
+- **стр. 44** — заголовка нет — `null`.
 
-### Функция `buildOrderItems(rawItems)` (стр. 41–97) — главная проверка безопасности
+### Функция `buildOrderItems(rawItems)` (стр. 50–130) — главная проверка безопасности
 
-- **Кто вызывает:** `createCheckoutSession` (стр. 115).
+- **Кто вызывает:** `createCheckoutSession` (стр. 148).
 - **Что вызывает:** `mongoose.Types.ObjectId.isValid`, `Product.findById` (база), таблицы `SIZE_PRICES` и `STRAP_PRICES`.
 - **Получает:** `rawItems` — массив позиций корзины, как его прислал браузер.
 - **Возвращает:** `{ items, error }` — позиции, собранные **с нашими ценами**, и текст первой ошибки (или `null`).
 
 ```js
-41 const buildOrderItems = async (rawItems) => {
-42   const items = [];
-43   let error = null;
-44   for (const it of rawItems || []) {
-45     const quantity = Math.max(1, parseInt(it.quantity, 10) || 1);
-46     let product = null;
-47     if (it.id && mongoose.Types.ObjectId.isValid(it.id)) {
-48       product = await Product.findById(it.id);
-49     }
+50 const buildOrderItems = async (rawItems) => {
+51   const items = [];
+52   // Only the first problem is kept and shown to the customer.
+53   let error = null;
+54
+55   if (!rawItems) {
+56     rawItems = [];
+57   }
+58
+59   for (const it of rawItems) {
+60     // The quantity is at least 1, even if the browser sent "abc", 0 or -5.
+61     let quantity = parseInt(it.quantity, 10);
+62     if (!quantity || quantity < 1) {
+63       quantity = 1;
+64     }
+65
+66     // Look for the product in the catalog, if the id looks like a real one.
+67     let product = null;
+68     if (it.id && mongoose.Types.ObjectId.isValid(it.id)) {
+69       product = await Product.findById(it.id);
+70     }
 ```
 
-- **стр. 42** — сюда соберём проверенные позиции.
-- **стр. 43** — сюда запишем первую найденную ошибку.
-- **стр. 44** — цикл по каждой позиции. `rawItems || []` — если ничего не прислали, цикл по пустому массиву.
-- **стр. 45** — количество: `parseInt` → целое; если не число — `|| 1`; `Math.max(1, ...)` — не меньше 1.
-- **стр. 46** — пока товар не найден.
-- **стр. 47** — если у позиции есть `id` и он похож на настоящий id MongoDB (24 шестнадцатеричных символа)…
-- **стр. 48** — …ищем товар в базе. У сумки из конструктора id вида `custom-1718...` — проверка на стр. 47 не пройдёт, и `product` останется `null`.
+- **стр. 51** — сюда соберём проверенные позиции.
+- **стр. 53** — сюда запишем первую найденную ошибку (покажем покупателю только её).
+- **стр. 55–57** — если ничего не прислали, работаем с пустым массивом, чтобы цикл не упал.
+- **стр. 59** — цикл по каждой позиции.
+- **стр. 61** — количество: `parseInt` превращает `"2"` в `2`. Для `"abc"` получится `NaN`.
+- **стр. 62–64** — не число (`NaN`), 0 или меньше — ставим 1.
+- **стр. 67** — пока товар не найден.
+- **стр. 68** — если у позиции есть `id` и он похож на настоящий id MongoDB (24 шестнадцатеричных символа)…
+- **стр. 69** — …ищем товар в базе. У сумки из конструктора id вида `custom-1718...` — проверка на стр. 68 не пройдёт, и `product` останется `null`.
 
 ```js
-50     if (product) {
-51       if (typeof product.stock === 'number') {
-52         if (product.stock <= 0) {
-53           error = error || `"${product.model_name}" is out of stock`;
-54         } else if (quantity > product.stock) {
-55           error = error || `Only ${product.stock} of "${product.model_name}" left in stock`;
-56         }
-57       }
-58       items.push({
-59         product: product._id,
-60         name: product.model_name,
-61         category: product.category,
-62         image: product.file_name,
-63         price: product.price || 0,
-64         quantity,
-65         custom: null,
-66       });
+72     if (product) {
+73       // stock === null means the stock is not tracked, so there is nothing to check.
+74       if (typeof product.stock === 'number' && !error) {
+75         if (product.stock <= 0) {
+76           error = `"${product.model_name}" is out of stock`;
+77         } else if (quantity > product.stock) {
+78           error = `Only ${product.stock} of "${product.model_name}" left in stock`;
+79         }
+80       }
+81       items.push({
+82         product: product._id,
+83         name: product.model_name,
+84         category: product.category,
+85         image: product.file_name,
+86         price: product.price || 0,
+87         quantity,
+88         custom: null,
+89       });
 ```
 
 **Ветка «товар из каталога»:**
-- **стр. 51** — остаток отслеживается (число, а не `null`)?
-- **стр. 52–53** — 0 или меньше — ошибка «нет в наличии». `error = error || ...` — записываем, только если ошибки ещё не было (показываем первую).
-- **стр. 54–55** — хотят больше, чем есть — ошибка «осталось только N».
-- **стр. 58–66** — добавляем позицию. **Все данные берутся из базы** (`product....`), а не из запроса: название, категория, картинка и главное — **цена** (стр. 63). Из запроса взято только количество.
+- **стр. 74** — проверяем, только если остаток отслеживается (число, а не `null`) и ошибки ещё не было (`!error` — показываем только первую).
+- **стр. 75–76** — 0 или меньше — ошибка «нет в наличии».
+- **стр. 77–78** — хотят больше, чем есть — ошибка «осталось только N».
+- **стр. 81–89** — добавляем позицию. **Все данные берутся из базы** (`product....`), а не из запроса: название, категория, картинка и главное — **цена** (стр. 86). Из запроса взято только количество.
 
 ```js
-67     } else {
-68       const config = it.config || it.custom || {};
-69       const sizePrice = SIZE_PRICES[config.size];
-70       const strapPrice = STRAP_PRICES[config.strap];
-71
-72       // Not a catalog product and not a known size and strap either.
-73       // typeof is checked because a made up size like "constructor" would
-74       // find a built in function in the table instead of a price.
-75       if (typeof sizePrice !== 'number' || typeof strapPrice !== 'number') {
-76         error = error || `"${it.name || 'Item'}" is no longer available`;
-77         continue;
-78       }
-79
-80       items.push({
-81         product: null,
-82         name: String(it.name || 'Custom item').slice(0, 120),
-83         category: 'custom',
-84         image: String(it.image || ''),
-85         price: sizePrice + strapPrice,
-86         quantity,
-87         custom: {
-88           size: config.size,
-89           strap: config.strap,
-90           chainColor: config.chainColor || null,
-91           color: String(config.color || ''),
-92         },
-93       });
-94     }
-95   }
-96   return { items, error };
-97 };
+90      } else {
+91        // Not in the catalog, so it should be a bag from the Custom Studio.
+92        // Its choices (size, strap...) come in "config".
+93        let config = {};
+94        if (it.config) {
+95          config = it.config;
+96        } else if (it.custom) {
+97          config = it.custom;
+98        }
+99
+100       const sizePrice = SIZE_PRICES[config.size];
+101       const strapPrice = STRAP_PRICES[config.strap];
+102
+103       // Not a catalog product and not a known size and strap either.
+104       // typeof is checked because a made up size like "constructor" would
+105       // find a built in function in the table instead of a price.
+106       if (typeof sizePrice !== 'number' || typeof strapPrice !== 'number') {
+107         if (!error) {
+108           error = `"${it.name || 'Item'}" is no longer available`;
+109         }
+110         continue;
+111       }
+112
+113       items.push({
+114         product: null,
+115         name: String(it.name || 'Custom item').slice(0, 120),
+116         category: 'custom',
+117         image: String(it.image || ''),
+118         price: sizePrice + strapPrice,
+119         quantity,
+120         custom: {
+121           size: config.size,
+122           strap: config.strap,
+123           chainColor: config.chainColor || null,
+124           color: String(config.color || ''),
+125         },
+126       });
+127     }
+128   }
+129   return { items, error };
+130 };
 ```
 
 **Ветка «сумка из конструктора» (или неизвестная позиция):**
-- **стр. 68** — параметры сумки: `config` (так их кладёт `CustomStudioPage`), запасной вариант — `custom`, иначе пустой объект.
-- **стр. 69** — цена размера из нашей таблицы: `SIZE_PRICES['small']` → 180.
-- **стр. 70** — цена ремешка.
-- **стр. 75** — если хоть одна цена — не число (размер или ремешок неизвестны или подделаны)… Проверка именно `typeof`, потому что у любого объекта JavaScript есть встроенные свойства: `SIZE_PRICES['constructor']` вернёт функцию, а не `undefined`.
-- **стр. 76** — …ошибка «товар недоступен».
-- **стр. 77** — `continue` — пропустить эту позицию и перейти к следующей.
-- **стр. 80–93** — добавляем позицию:
-  - **стр. 81** — `product: null` — в каталоге такого товара нет;
-  - **стр. 82** — название из запроса, но принудительно строкой и не длиннее 120 символов;
-  - **стр. 83** — категория всегда `custom`;
-  - **стр. 85** — **цена = размер + ремешок по нашим таблицам**. Цена, которую прислал браузер, не используется вообще;
-  - **стр. 87–92** — параметры сумки сохраняются в заказе, чтобы мастер знал, что делать.
-- **стр. 96** — возвращаем позиции и ошибку.
+- **стр. 93–98** — параметры сумки: берём `config` (так их кладёт `CustomStudioPage`), если его нет — `custom`, если нет и его — остаётся пустой объект.
+- **стр. 100** — цена размера из нашей таблицы: `SIZE_PRICES['small']` → 180.
+- **стр. 101** — цена ремешка.
+- **стр. 106** — если хоть одна цена — не число (размер или ремешок неизвестны или подделаны)… Проверка именно `typeof`, потому что у любого объекта JavaScript есть встроенные свойства: `SIZE_PRICES['constructor']` вернёт функцию, а не `undefined`.
+- **стр. 107–109** — …ошибка «товар недоступен», если до этого ошибки ещё не было.
+- **стр. 110** — `continue` — пропустить эту позицию и перейти к следующей.
+- **стр. 113–126** — добавляем позицию:
+  - **стр. 114** — `product: null` — в каталоге такого товара нет;
+  - **стр. 115** — название из запроса, но принудительно строкой и не длиннее 120 символов;
+  - **стр. 116** — категория всегда `custom`;
+  - **стр. 118** — **цена = размер + ремешок по нашим таблицам**. Цена, которую прислал браузер, не используется вообще;
+  - **стр. 120–125** — параметры сумки сохраняются в заказе, чтобы мастер знал, что делать.
+- **стр. 129** — возвращаем позиции и ошибку.
 
-### Функция `createCheckoutSession` — начать оплату (стр. 100–171)
+### Функция `createCheckoutSession` — начать оплату (стр. 133–204)
 
 - **Кто вызывает:** `ordersRoute.js` стр. 18, `POST /api/orders/checkout-session`. С фронта — `CheckoutPage.jsx`, кнопка Proceed to Payment.
 - **Что вызывает:** `buildOrderItems`, `genOrderNumber`, `userIdFromHeader`, `Order.create` (база), `stripe.checkout.sessions.create` (Stripe через интернет), `order.save()`.
@@ -1906,460 +1995,483 @@ const имя = async (req, res) => {
 - **Возвращает:** `{ url }` — адрес страницы оплаты Stripe.
 
 ```js
-100 const createCheckoutSession = async (req, res) => {
-101   try {
-102     if (!stripe) {
-103       return res.status(501).send({ message: 'Payments are not configured' });
-104     }
-105
-106     const { items: rawItems, customer, shipping, deliveryMethod, notes } = req.body;
-107
-108     if (!customer?.name || !customer?.email) {
-109       return res.status(400).send({ message: 'Name and email are required' });
-110     }
-111     if (!Array.isArray(rawItems) || rawItems.length === 0) {
-112       return res.status(400).send({ message: 'Cart is empty' });
-113     }
-114
-115     const { items, error: stockError } = await buildOrderItems(rawItems);
-116     if (stockError) {
-117       return res.status(400).send({ message: stockError });
-118     }
-119     const subtotal = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
-120     const total = subtotal; // free shipping for now
-121
-122     if (total <= 0) {
-123       return res.status(400).send({ message: 'Order total is invalid' });
-124     }
+133 const createCheckoutSession = async (req, res) => {
+134   try {
+135     if (!stripe) {
+136       return res.status(501).send({ message: 'Payments are not configured' });
+137     }
+138
+139     const { items: rawItems, customer, shipping, deliveryMethod, notes } = req.body;
+140
+141     if (!customer?.name || !customer?.email) {
+142       return res.status(400).send({ message: 'Name and email are required' });
+143     }
+144     if (!Array.isArray(rawItems) || rawItems.length === 0) {
+145       return res.status(400).send({ message: 'Cart is empty' });
+146     }
+147
+148     const { items, error: stockError } = await buildOrderItems(rawItems);
+149     if (stockError) {
+150       return res.status(400).send({ message: stockError });
+151     }
+152     const subtotal = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+153     const total = subtotal; // free shipping for now
+154
+155     if (total <= 0) {
+156       return res.status(400).send({ message: 'Order total is invalid' });
+157     }
 ```
 
-- **стр. 102–104** — Stripe не подключён (нет ключа) — 501.
-- **стр. 106** — достаём поля. `items: rawItems` — взять поле `items`, но назвать переменную `rawItems` («сырые», непроверенные).
-- **стр. 108–110** — без имени или почты — 400. `customer?.name` — не упасть, если `customer` не прислали.
-- **стр. 111–113** — `items` не массив или пустой — 400.
-- **стр. 115** — собираем позиции с нашими ценами. `error: stockError` — переименовать поле `error` в переменную `stockError`.
-- **стр. 116–118** — была ошибка (нет в наличии, неизвестная сумка) — 400 с её текстом.
-- **стр. 119** — `reduce` проходит по позициям и копит сумму: начиная с 0, к сумме прибавляется цена × количество.
-- **стр. 120** — итого = сумма (доставка бесплатная).
-- **стр. 122–124** — итог 0 или меньше — 400.
+- **стр. 135–137** — Stripe не подключён (нет ключа) — 501.
+- **стр. 139** — достаём поля. `items: rawItems` — взять поле `items`, но назвать переменную `rawItems` («сырые», непроверенные).
+- **стр. 141–143** — без имени или почты — 400. `customer?.name` — не упасть, если `customer` не прислали.
+- **стр. 144–146** — `items` не массив или пустой — 400.
+- **стр. 148** — собираем позиции с нашими ценами. `error: stockError` — переименовать поле `error` в переменную `stockError`.
+- **стр. 149–151** — была ошибка (нет в наличии, неизвестная сумка) — 400 с её текстом.
+- **стр. 152** — `reduce` проходит по позициям и копит сумму: начиная с 0, к сумме прибавляется цена × количество.
+- **стр. 153** — итого = сумма (доставка бесплатная).
+- **стр. 155–157** — итог 0 или меньше — 400.
 
 ```js
-126     const order = await Order.create({
-127       orderNumber: genOrderNumber(),
-128       user: userIdFromHeader(req),
-129       customer: { name: customer.name, email: customer.email, phone: customer.phone || '' },
-130       shipping: {
-131         address: shipping?.address || '',
-132         city: shipping?.city || '',
-133         country: shipping?.country || '',
-134       },
-135       deliveryMethod: deliveryMethod === 'pickup' ? 'pickup' : 'delivery',
-136       items,
-137       subtotal,
-138       total,
-139       currency: 'usd',
-140       status: 'pending',
-141       notes: notes || '',
-142     });
+159     const order = await Order.create({
+160       orderNumber: genOrderNumber(),
+161       user: userIdFromHeader(req),
+162       customer: { name: customer.name, email: customer.email, phone: customer.phone || '' },
+163       shipping: {
+164         address: shipping?.address || '',
+165         city: shipping?.city || '',
+166         country: shipping?.country || '',
+167       },
+168       deliveryMethod: deliveryMethod === 'pickup' ? 'pickup' : 'delivery',
+169       items,
+170       subtotal,
+171       total,
+172       currency: 'usd',
+173       status: 'pending',
+174       notes: notes || '',
+175     });
 ```
 
-- **стр. 126** — создаём заказ в базе **до** оплаты.
-- **стр. 127** — номер заказа.
-- **стр. 128** — id покупателя или `null` для гостя.
-- **стр. 129** — контакты; телефон необязателен.
-- **стр. 130–134** — адрес; для самовывоза пустые строки.
-- **стр. 135** — способ получения: только `pickup` или `delivery`, любое другое значение превращается в `delivery`.
-- **стр. 136–138** — проверенные позиции и суммы.
-- **стр. 140** — статус `pending` — «ждёт оплаты». Оплаченным его сделает только вебхук.
-- **стр. 141** — комментарий покупателя.
+- **стр. 159** — создаём заказ в базе **до** оплаты.
+- **стр. 160** — номер заказа.
+- **стр. 161** — id покупателя или `null` для гостя.
+- **стр. 162** — контакты; телефон необязателен.
+- **стр. 163–167** — адрес; для самовывоза пустые строки.
+- **стр. 168** — способ получения: только `pickup` или `delivery`, любое другое значение превращается в `delivery`.
+- **стр. 169–171** — проверенные позиции и суммы.
+- **стр. 173** — статус `pending` — «ждёт оплаты». Оплаченным его сделает только вебхук.
+- **стр. 174** — комментарий покупателя.
 
 ```js
-144     const base = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
-145
-146     const session = await stripe.checkout.sessions.create({
-147       mode: 'payment',
-148       payment_method_types: ['card'],
-149       customer_email: customer.email,
-150       line_items: items.map((it) => ({
-151         price_data: {
-152           currency: 'usd',
-153           product_data: { name: `${it.name}${it.custom ? ' (Custom)' : ''}` },
-154           unit_amount: Math.round(it.price * 100),
-155         },
-156         quantity: it.quantity,
-157       })),
-158       metadata: { orderId: order._id.toString() },
-159       success_url: `${base}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-160       cancel_url: `${base}/checkout`,
-161     });
-162
-163     order.payment.sessionId = session.id;
-164     await order.save();
-165
-166     res.status(200).json({ url: session.url });
+177     const base = req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173';
+178
+179     const session = await stripe.checkout.sessions.create({
+180       mode: 'payment',
+181       payment_method_types: ['card'],
+182       customer_email: customer.email,
+183       line_items: items.map((it) => ({
+184         price_data: {
+185           currency: 'usd',
+186           product_data: { name: `${it.name}${it.custom ? ' (Custom)' : ''}` },
+187           unit_amount: Math.round(it.price * 100),
+188         },
+189         quantity: it.quantity,
+190       })),
+191       metadata: { orderId: order._id.toString() },
+192       success_url: `${base}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+193       cancel_url: `${base}/checkout`,
+194     });
+195
+196     order.payment.sessionId = session.id;
+197     await order.save();
+198
+199     res.status(200).json({ url: session.url });
 ```
 
-- **стр. 144** — адрес сайта: откуда пришёл запрос, иначе из настроек, иначе локальный. Нужен, чтобы Stripe вернул покупателя на наш сайт.
-- **стр. 146** — запрос в Stripe: создать **сессию оплаты** — страницу, где покупатель введёт карту.
-- **стр. 147** — `mode: 'payment'` — разовая оплата (не подписка).
-- **стр. 148** — способ — банковская карта.
-- **стр. 149** — почта покупателя подставится на странице Stripe.
-- **стр. 150–157** — позиции для Stripe: `map` превращает каждую нашу позицию в формат Stripe:
-  - **стр. 153** — название; у кастомной сумки дописываем « (Custom)»;
-  - **стр. 154** — цена за штуку **в центах**: Stripe принимает суммы в минимальных единицах валюты. `Math.round` убирает ошибки дробей (например, 19.99 × 100 = 1998.9999…);
-  - **стр. 156** — количество.
-- **стр. 158** — `metadata` — наша пометка: id заказа. Stripe вернёт её в вебхуке, и мы найдём заказ.
-- **стр. 159** — куда вернуть после успешной оплаты. `{CHECKOUT_SESSION_ID}` Stripe сам заменит на id сессии.
-- **стр. 160** — куда вернуть, если покупатель нажал «назад».
-- **стр. 163–164** — записываем id сессии в заказ и сохраняем — по нему страница «спасибо» найдёт заказ.
-- **стр. 166** — фронту отдаём только адрес страницы оплаты.
-- **стр. 167–170** — любая ошибка — 500 «Could not start checkout».
+- **стр. 177** — адрес сайта: откуда пришёл запрос, иначе из настроек, иначе локальный. Нужен, чтобы Stripe вернул покупателя на наш сайт.
+- **стр. 179** — запрос в Stripe: создать **сессию оплаты** — страницу, где покупатель введёт карту.
+- **стр. 180** — `mode: 'payment'` — разовая оплата (не подписка).
+- **стр. 181** — способ — банковская карта.
+- **стр. 182** — почта покупателя подставится на странице Stripe.
+- **стр. 183–190** — позиции для Stripe: `map` превращает каждую нашу позицию в формат Stripe:
+  - **стр. 186** — название; у кастомной сумки дописываем « (Custom)»;
+  - **стр. 187** — цена за штуку **в центах**: Stripe принимает суммы в минимальных единицах валюты. `Math.round` убирает ошибки дробей (например, 19.99 × 100 = 1998.9999…);
+  - **стр. 189** — количество.
+- **стр. 191** — `metadata` — наша пометка: id заказа. Stripe вернёт её в вебхуке, и мы найдём заказ.
+- **стр. 192** — куда вернуть после успешной оплаты. `{CHECKOUT_SESSION_ID}` Stripe сам заменит на id сессии.
+- **стр. 193** — куда вернуть, если покупатель нажал «назад».
+- **стр. 196–197** — записываем id сессии в заказ и сохраняем — по нему страница «спасибо» найдёт заказ.
+- **стр. 199** — фронту отдаём только адрес страницы оплаты.
+- **стр. 200–203** — любая ошибка — 500 «Could not start checkout».
 
-### Функции для писем (стр. 173–233)
+### Функции для писем (стр. 206–277)
 
 ```js
-173 // The helpers below build the HTML of the two order emails.
-174 const money = (n) => `$${Number(n).toFixed(2)}`;
+206 // The helpers below build the HTML of the two order emails.
+207 const money = (n) => `$${Number(n).toFixed(2)}`;
 ```
 
 - **Функция `money(n)`** — формат денег: `50` → `$50.00`. `toFixed(2)` — ровно два знака после точки. Первый `$` — это символ доллара в тексте, `${...}` — вставка значения. Вызывается из `itemsTableRows`, `itemsTable`, `sendManagerReport`.
 
 ```js
-176 const itemsTableRows = (order) =>
-177   order.items
-178     .map((it) => {
-179       const spec = it.custom
-180         ? `<br><span style="color:#888;font-size:12px">${[it.custom.size, it.custom.strap, it.custom.chainColor, it.custom.color]
-181             .filter(Boolean)
-182             .join(' · ')}</span>`
-183         : '';
-184       return `<tr>
-185         <td ...>${it.name}${spec}</td>
-186         <td ...>${it.quantity}</td>
-187         <td ...>${money(it.price * it.quantity)}</td>
-188       </tr>`;
-189     })
-190     .join('');
+209 // One table row per item. A custom bag also gets a small grey line with
+210 // its choices, for example "small · golden · pink".
+211 const itemsTableRows = (order) =>
+212   order.items
+213     .map((it) => {
+214       let spec = '';
+215       if (it.custom) {
+216         const choices = [it.custom.size, it.custom.strap, it.custom.chainColor, it.custom.color];
+217         // filter(Boolean) drops the empty ones (null, ''), so no " ·  · " appears.
+218         const filled = choices.filter(Boolean);
+219         spec = `<br><span style="color:#888;font-size:12px">${filled.join(' · ')}</span>`;
+220       }
+221       return `<tr>
+222         <td style="padding:8px 0;border-bottom:1px solid #eee">${it.name}${spec}</td>
+223         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">${it.quantity}</td>
+224         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${money(it.price * it.quantity)}</td>
+225       </tr>`;
+226     })
+227     .join('');
 ```
 
-- **Функция `itemsTableRows(order)`** — строки HTML-таблицы позиций для письма. Вызывается из `itemsTable` (стр. 204).
-- **стр. 178** — `map` — для каждой позиции строим кусок HTML.
-- **стр. 179–183** — `spec` — для кастомной сумки серым шрифтом её параметры: массив из четырёх значений → `filter(Boolean)` убирает пустые → `join(' · ')` склеивает через точку: `small · beaded · black`. Для обычного товара — пустая строка.
-- **стр. 184–188** — строка таблицы: название (+ параметры), количество, сумма по позиции.
-- **стр. 190** — `join('')` склеивает все строки в одну большую строку HTML.
+- **Функция `itemsTableRows(order)`** — строки HTML-таблицы позиций для письма. Вызывается из `itemsTable` (стр. 248).
+- **стр. 213** — `map` — для каждой позиции строим кусок HTML.
+- **стр. 214** — `spec` — дополнительная серая строка. Для обычного товара она так и остаётся пустой.
+- **стр. 215–220** — только для кастомной сумки:
+  - **стр. 216** — массив из четырёх параметров: размер, ремешок, цвет цепочки, цвет бусин;
+  - **стр. 218** — `filter(Boolean)` убирает пустые (`null`, `''`) — например, цвет цепочки есть только у ремешка Mixed;
+  - **стр. 219** — `join(' · ')` склеивает через точку: `small · beaded · black`, и оборачиваем это в серый `<span>`.
+- **стр. 221–225** — строка таблицы: название (+ параметры), количество, сумма по позиции.
+- **стр. 227** — `join('')` склеивает все строки в одну большую строку HTML.
 
 ```js
-192 const deliveryLine = (order) =>
-193   order.deliveryMethod === 'pickup'
-194     ? 'Self pickup'
-195     : `Delivery to ${[order.shipping.address, order.shipping.city, order.shipping.country].filter(Boolean).join(', ')}`;
+229 // "Self pickup", or "Delivery to Herzl 5, Tel Aviv, Israel".
+230 const deliveryLine = (order) => {
+231   if (order.deliveryMethod === 'pickup') {
+232     return 'Self pickup';
+233   }
+234
+235   const parts = [order.shipping.address, order.shipping.city, order.shipping.country];
+236   // Empty parts are dropped, so there is no ", ," in the text.
+237   const filled = parts.filter(Boolean);
+238   return `Delivery to ${filled.join(', ')}`;
+239 };
 ```
 
-- **Функция `deliveryLine(order)`** — строка о способе получения: «Self pickup» или «Delivery to адрес, город, страна» (пустые части убираются). Вызывается из обоих писем.
+- **Функция `deliveryLine(order)`** — строка о способе получения. Вызывается из обоих писем.
+- **стр. 231–233** — самовывоз — сразу возвращаем «Self pickup».
+- **стр. 235** — иначе собираем адрес, город и страну в массив.
+- **стр. 237** — `filter(Boolean)` убирает пустые части, чтобы в тексте не было `, ,`.
+- **стр. 238** — склеиваем через запятую: «Delivery to Herzl 5, Tel Aviv, Israel».
 
 ```js
-197 const itemsTable = (order) => `
-198   <table ...>
-199     <thead><tr> ...заголовки Item / Qty / Price... </tr></thead>
-204     <tbody>${itemsTableRows(order)}</tbody>
-205   </table>
-206   <p ...><strong>Total: ${money(order.total)}</strong></p>`;
+241 const itemsTable = (order) => `
+242   <table style="width:100%;border-collapse:collapse;margin:18px 0">
+243     <thead><tr>
+244       <th style="text-align:left;border-bottom:2px solid #111;padding-bottom:6px">Item</th>
+245       <th style="text-align:center;border-bottom:2px solid #111;padding-bottom:6px">Qty</th>
+246       <th style="text-align:right;border-bottom:2px solid #111;padding-bottom:6px">Price</th>
+247     </tr></thead>
+248     <tbody>${itemsTableRows(order)}</tbody>
+249   </table>
+250   <p style="text-align:right;font-size:18px"><strong>Total: ${money(order.total)}</strong></p>`;
 ```
 
-- **Функция `itemsTable(order)`** — вся таблица: заголовки (стр. 199–203), строки из `itemsTableRows` (стр. 204), итог (стр. 206). Вызывается из обоих писем.
+- **Функция `itemsTable(order)`** — вся таблица: заголовки (стр. 243–247), строки из `itemsTableRows` (стр. 248), итог (стр. 250). Вызывается из обоих писем.
 
 ```js
-208 const sendCustomerReceipt = async (order) => {
-209   const html = `
-210     <div ...>
-211       <h2 ...>DARIN'S HANDMADE</h2>
-212       <p>Hi ${order.customer.name}, thank you for your order!</p>
-213       <p>Order <strong>${order.orderNumber}</strong> is confirmed and paid.</p>
-214       ${itemsTable(order)}
-215       <p ...>${deliveryLine(order)}</p>
-216       <p ...>Handmade to order — we'll be in touch about production & delivery.</p>
-217     </div>`;
-218   await sendMail({ to: order.customer.email, subject: `Your DARIN'S HANDMADE order ${order.orderNumber}`, html });
-219 };
+252 const sendCustomerReceipt = async (order) => {
+253   const html = `
+254     <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
+255       <h2 style="letter-spacing:2px">DARIN'S HANDMADE</h2>
+256       <p>Hi ${order.customer.name}, thank you for your order!</p>
+257       <p>Order <strong>${order.orderNumber}</strong> is confirmed and paid.</p>
+258       ${itemsTable(order)}
+259       <p style="color:#555">${deliveryLine(order)}</p>
+260       <p style="color:#999;font-size:13px">Handmade to order — we'll be in touch about production & delivery.</p>
+261     </div>`;
+262   await sendMail({ to: order.customer.email, subject: `Your DARIN'S HANDMADE order ${order.orderNumber}`, html });
+263 };
 ```
 
-- **Функция `sendCustomerReceipt(order)`** — письмо-чек покупателю. Вызывается из `stripeWebhook` (стр. 276).
-- **стр. 209–217** — HTML письма: приветствие по имени, номер заказа, таблица позиций, способ получения.
-- **стр. 218** — `sendMail` (utils/email.js) на почту покупателя.
+- **Функция `sendCustomerReceipt(order)`** — письмо-чек покупателю. Вызывается из `stripeWebhook` (стр. 320).
+- **стр. 253–261** — HTML письма: приветствие по имени, номер заказа, таблица позиций, способ получения.
+- **стр. 262** — `sendMail` (utils/email.js) на почту покупателя.
 
 ```js
-221 const sendManagerReport = async (order) => {
-222   const to = process.env.MANAGER_EMAIL;
-223   if (!to) return;
-224   const html = `
-225     <div ...>
-226       <h2>New order — ${order.orderNumber}</h2>
-227       <p><strong>Customer:</strong> ${order.customer.name} · ${order.customer.email} · ${order.customer.phone || '—'}</p>
-228       <p><strong>Fulfilment:</strong> ${deliveryLine(order)}</p>
-229       ${itemsTable(order)}
-230       ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
-231     </div>`;
-232   await sendMail({ to, subject: `New order ${order.orderNumber} — ${money(order.total)}`, html });
-233 };
+265 const sendManagerReport = async (order) => {
+266   const to = process.env.MANAGER_EMAIL;
+267   if (!to) return;
+268   const html = `
+269     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#111">
+270       <h2>New order — ${order.orderNumber}</h2>
+271       <p><strong>Customer:</strong> ${order.customer.name} · ${order.customer.email} · ${order.customer.phone || '—'}</p>
+272       <p><strong>Fulfilment:</strong> ${deliveryLine(order)}</p>
+273       ${itemsTable(order)}
+274       ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ''}
+275     </div>`;
+276   await sendMail({ to, subject: `New order ${order.orderNumber} — ${money(order.total)}`, html });
+277 };
 ```
 
-- **Функция `sendManagerReport(order)`** — письмо менеджеру о новом заказе. Вызывается из `stripeWebhook` (стр. 277).
-- **стр. 222–223** — почта менеджера из настроек; если не задана — письмо не отправляем.
-- **стр. 226–230** — номер, контакты покупателя (телефон или «—»), способ получения, таблица, комментарий (только если есть).
-- **стр. 232** — отправка, в теме — номер и сумма.
+- **Функция `sendManagerReport(order)`** — письмо менеджеру о новом заказе. Вызывается из `stripeWebhook` (стр. 321).
+- **стр. 266–267** — почта менеджера из настроек; если не задана — письмо не отправляем.
+- **стр. 270–274** — номер, контакты покупателя (телефон или «—»), способ получения, таблица, комментарий (только если есть).
+- **стр. 276** — отправка, в теме — номер и сумма.
 
-### Функция `stripeWebhook` — Stripe сообщает об оплате (стр. 237–288)
+### Функция `stripeWebhook` — Stripe сообщает об оплате (стр. 281–332)
 
 - **Кто вызывает:** **сервер Stripe** (не браузер!) после успешной оплаты: `POST /api/orders/webhook`. Подключена в `index.js` стр. 25, после `express.raw`.
 - **Что вызывает:** `stripe.webhooks.constructEvent` (проверка подписи), `Order.findById`, `order.save()`, `Product.updateOne` (база), `sendCustomerReceipt`, `sendManagerReport`.
 
 ```js
-237 const stripeWebhook = async (req, res) => {
-238   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
-239     return res.status(501).send('Stripe webhook not configured');
-240   }
-241
-242   // The signature proves the request really came from Stripe.
-243   let event;
-244   try {
-245     event = stripe.webhooks.constructEvent(
-246       req.body,
-247       req.headers['stripe-signature'],
-248       process.env.STRIPE_WEBHOOK_SECRET
-249     );
-250   } catch (error) {
-251     return res.status(400).send(`Webhook Error: ${error.message}`);
-252   }
+281 const stripeWebhook = async (req, res) => {
+282   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+283     return res.status(501).send('Stripe webhook not configured');
+284   }
+285
+286   // The signature proves the request really came from Stripe.
+287   let event;
+288   try {
+289     event = stripe.webhooks.constructEvent(
+290       req.body,
+291       req.headers['stripe-signature'],
+292       process.env.STRIPE_WEBHOOK_SECRET
+293     );
+294   } catch (error) {
+295     return res.status(400).send(`Webhook Error: ${error.message}`);
+296   }
 ```
 
-- **стр. 238–240** — нет ключа или секрета вебхука — 501.
-- **стр. 243** — переменная для события.
-- **стр. 245–249** — `constructEvent(тело, подпись, секрет)` — проверяет, что запрос действительно от Stripe: Stripe подписал сырое тело (`req.body` здесь — байты, благодаря `express.raw`) секретом `whsec_...`; подпись пришла в заголовке `stripe-signature`. Совпало — возвращает объект события. Не совпало — бросает ошибку.
-- **стр. 250–252** — подпись неверная (кто-то пытается подделать оплату) — 400.
+- **стр. 282–284** — нет ключа или секрета вебхука — 501.
+- **стр. 287** — переменная для события.
+- **стр. 289–293** — `constructEvent(тело, подпись, секрет)` — проверяет, что запрос действительно от Stripe: Stripe подписал сырое тело (`req.body` здесь — байты, благодаря `express.raw`) секретом `whsec_...`; подпись пришла в заголовке `stripe-signature`. Совпало — возвращает объект события. Не совпало — бросает ошибку.
+- **стр. 294–296** — подпись неверная (кто-то пытается подделать оплату) — 400.
 
 ```js
-254   if (event.type === 'checkout.session.completed') {
-255     const session = event.data.object;
-256     try {
-257       const order = await Order.findById(session.metadata?.orderId);
-258       // Stripe may send the same event twice, so only a pending order is handled.
-259       if (order && order.status === 'pending') {
-260         order.status = 'paid';
-261         order.payment.paymentIntentId = session.payment_intent;
-262         order.payment.paidAt = new Date();
-263         await order.save();
+298   if (event.type === 'checkout.session.completed') {
+299     const session = event.data.object;
+300     try {
+301       const order = await Order.findById(session.metadata?.orderId);
+302       // Stripe may send the same event twice, so only a pending order is handled.
+303       if (order && order.status === 'pending') {
+304         order.status = 'paid';
+305         order.payment.paymentIntentId = session.payment_intent;
+306         order.payment.paidAt = new Date();
+307         await order.save();
 ```
 
-- **стр. 254** — нас интересует только событие «сессия оплаты завершена».
-- **стр. 255** — сама сессия оплаты (в ней наш `metadata`).
-- **стр. 257** — находим заказ по `orderId`, который мы положили в `metadata` (стр. 158).
-- **стр. 259** — только если заказ есть и ещё `pending`. Если Stripe пришлёт то же событие повторно, заказ уже `paid`, и второй раз мы ничего не сделаем.
-- **стр. 260** — статус «оплачен».
-- **стр. 261** — id платежа в Stripe.
-- **стр. 262** — время оплаты.
-- **стр. 263** — сохраняем.
+- **стр. 298** — нас интересует только событие «сессия оплаты завершена».
+- **стр. 299** — сама сессия оплаты (в ней наш `metadata`).
+- **стр. 301** — находим заказ по `orderId`, который мы положили в `metadata` (стр. 191).
+- **стр. 303** — только если заказ есть и ещё `pending`. Если Stripe пришлёт то же событие повторно, заказ уже `paid`, и второй раз мы ничего не сделаем.
+- **стр. 304** — статус «оплачен».
+- **стр. 305** — id платежа в Stripe.
+- **стр. 306** — время оплаты.
+- **стр. 307** — сохраняем.
 
 ```js
-265         // The stock check is part of the query, so it never goes below zero.
-266         for (const it of order.items) {
-267           if (it.product) {
-268             await Product.updateOne(
-269               { _id: it.product, stock: { $gte: it.quantity } },
-270               { $inc: { stock: -it.quantity } }
-271             );
-272           }
-273         }
+309         // The stock check is part of the query, so it never goes below zero.
+310         for (const it of order.items) {
+311           if (it.product) {
+312             await Product.updateOne(
+313               { _id: it.product, stock: { $gte: it.quantity } },
+314               { $inc: { stock: -it.quantity } }
+315             );
+316           }
+317         }
 ```
 
-- **стр. 266** — по каждой позиции заказа.
-- **стр. 267** — только товары каталога (у кастомной сумки `product: null`).
-- **стр. 268–271** — `updateOne(условие, изменение)`: найти товар, у которого `_id` совпадает **и** остаток `$gte` (больше или равен) количеству, и уменьшить остаток (`$inc` с минусом). Проверка и уменьшение — **одна операция** в базе, поэтому остаток не уйдёт в минус, даже если два человека платят одновременно. Если остаток `null` (не отслеживается), условие `$gte` не выполнится, и ничего не изменится — так и нужно.
+- **стр. 310** — по каждой позиции заказа.
+- **стр. 311** — только товары каталога (у кастомной сумки `product: null`).
+- **стр. 312–315** — `updateOne(условие, изменение)`: найти товар, у которого `_id` совпадает **и** остаток `$gte` (больше или равен) количеству, и уменьшить остаток (`$inc` с минусом). Проверка и уменьшение — **одна операция** в базе, поэтому остаток не уйдёт в минус, даже если два человека платят одновременно. Если остаток `null` (не отслеживается), условие `$gte` не выполнится, и ничего не изменится — так и нужно.
 
 ```js
-275         try {
-276           await sendCustomerReceipt(order);
-277           await sendManagerReport(order);
-278         } catch (mailErr) {
-279           console.error('Order email error:', mailErr);
-280         }
-281       }
-282     } catch (error) {
-283       console.log(error.message);
-284     }
-285   }
-286
-287   res.json({ received: true });
-288 };
+319         try {
+320           await sendCustomerReceipt(order);
+321           await sendManagerReport(order);
+322         } catch (mailErr) {
+323           console.error('Order email error:', mailErr);
+324         }
+325       }
+326     } catch (error) {
+327       console.log(error.message);
+328     }
+329   }
+330
+331   res.json({ received: true });
+332 };
 ```
 
-- **стр. 275–280** — письма в отдельном `try/catch`: если письмо не ушло, оплата всё равно учтена.
-- **стр. 282–284** — ошибка базы — пишем в консоль.
-- **стр. 287** — ответ Stripe «получено» (код 200). Если не ответить 200, Stripe будет повторять запрос.
+- **стр. 319–324** — письма в отдельном `try/catch`: если письмо не ушло, оплата всё равно учтена.
+- **стр. 326–328** — ошибка базы — пишем в консоль.
+- **стр. 331** — ответ Stripe «получено» (код 200). Если не ответить 200, Stripe будет повторять запрос.
 
-### Константы статусов (стр. 290–291)
+### Константы статусов (стр. 334–335)
 
 ```js
-290 const ALLOWED_STATUS = ['pending', 'paid', 'in_production', 'shipped', 'completed', 'cancelled'];
-291 const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
+334 const ALLOWED_STATUS = ['pending', 'paid', 'in_production', 'shipped', 'completed', 'cancelled'];
+335 const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
 ```
 
-- **стр. 290** — все разрешённые статусы. Используется в `updateOrderStatus` (стр. 377).
-- **стр. 291** — статусы, которые считаются «деньги получены». Используется в `getStats` (стр. 297).
+- **стр. 334** — все разрешённые статусы. Используется в `updateOrderStatus` (стр. 421).
+- **стр. 335** — статусы, которые считаются «деньги получены». Используется в `getStats` (стр. 341).
 
-### Функция `getStats` — статистика продаж (стр. 294–341)
+### Функция `getStats` — статистика продаж (стр. 338–385)
 
 - **Кто вызывает:** `GET /api/orders/stats` (`ordersRoute.js` стр. 22). Фронт: `ManagerOrdersPage` (`loadStats`), с параметром `?days=7` или `?days=30` или без него.
 - **Что вызывает:** `Order.aggregate` (база) три раза.
 
 ```js
-296     const days = Number(req.query.days);
-297     const match = { status: { $in: PAID_STATUSES } };
-298     if (days > 0) {
-299       match.createdAt = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
-300     }
+340     const days = Number(req.query.days);
+341     const match = { status: { $in: PAID_STATUSES } };
+342     if (days > 0) {
+343       match.createdAt = { $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
+344     }
 ```
 
-- **стр. 296** — `req.query.days` — параметр после `?` в адресе. `Number(...)` — в число (если параметра нет — `NaN`).
-- **стр. 297** — условие отбора: статус входит (`$in`) в список оплаченных.
-- **стр. 298–300** — если указан период — добавляем условие «создан не раньше, чем N дней назад». `days × 24 × 60 × 60 × 1000` — дни в миллисекундах.
+- **стр. 340** — `req.query.days` — параметр после `?` в адресе. `Number(...)` — в число (если параметра нет — `NaN`).
+- **стр. 341** — условие отбора: статус входит (`$in`) в список оплаченных.
+- **стр. 342–344** — если указан период — добавляем условие «создан не раньше, чем N дней назад». `days × 24 × 60 × 60 × 1000` — дни в миллисекундах.
 
 ```js
-302     const [totals] = await Order.aggregate([
-303       { $match: match },
-304       { $group: { _id: null, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
-305     ]);
+346     const [totals] = await Order.aggregate([
+347       { $match: match },
+348       { $group: { _id: null, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
+349     ]);
 ```
 
 - **`aggregate([этапы])`** — обработка данных внутри базы по этапам, как по конвейеру.
-- **стр. 303** — `$match` — оставить только заказы под условие.
-- **стр. 304** — `$group` с `_id: null` — сложить **все** оставшиеся заказы в одну группу: `revenue` — сумма полей `total` (`'$total'` — значение поля), `count` — количество (по 1 за каждый).
-- **стр. 302** — `aggregate` всегда возвращает массив; `[totals]` берёт первый элемент. Если заказов нет — `undefined`.
+- **стр. 347** — `$match` — оставить только заказы под условие.
+- **стр. 348** — `$group` с `_id: null` — сложить **все** оставшиеся заказы в одну группу: `revenue` — сумма полей `total` (`'$total'` — значение поля), `count` — количество (по 1 за каждый).
+- **стр. 346** — `aggregate` всегда возвращает массив; `[totals]` берёт первый элемент. Если заказов нет — `undefined`.
 
 ```js
-307     const byStatus = await Order.aggregate([
-308       { $group: { _id: '$status', count: { $sum: 1 } } },
-309     ]);
+351     const byStatus = await Order.aggregate([
+352       { $group: { _id: '$status', count: { $sum: 1 } } },
+353     ]);
 ```
 
-- **стр. 307–309** — сколько заказов в каждом статусе: группировка по полю `status`. Результат вида `[{ _id: 'paid', count: 3 }, ...]`.
+- **стр. 351–353** — сколько заказов в каждом статусе: группировка по полю `status`. Результат вида `[{ _id: 'paid', count: 3 }, ...]`.
 
 ```js
-311     const topProducts = await Order.aggregate([
-312       { $match: match },
-313       { $unwind: '$items' },
-314       {
-315         $group: {
-316           _id: '$items.name',
-317           qty: { $sum: '$items.quantity' },
-318           revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
-319         },
-320       },
-321       { $sort: { qty: -1 } },
-322       { $limit: 5 },
-323     ]);
+355     const topProducts = await Order.aggregate([
+356       { $match: match },
+357       { $unwind: '$items' },
+358       {
+359         $group: {
+360           _id: '$items.name',
+361           qty: { $sum: '$items.quantity' },
+362           revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+363         },
+364       },
+365       { $sort: { qty: -1 } },
+366       { $limit: 5 },
+367     ]);
 ```
 
-- **стр. 312** — те же оплаченные заказы.
-- **стр. 313** — `$unwind` «разворачивает» массив: заказ с тремя позициями превращается в три документа, по одному на позицию.
-- **стр. 315–319** — группируем по названию товара: сколько штук продано и на какую сумму (`$multiply` — цена × количество).
-- **стр. 321** — сортировка по количеству, `-1` — по убыванию.
-- **стр. 322** — первые пять.
+- **стр. 356** — те же оплаченные заказы.
+- **стр. 357** — `$unwind` «разворачивает» массив: заказ с тремя позициями превращается в три документа, по одному на позицию.
+- **стр. 359–363** — группируем по названию товара: сколько штук продано и на какую сумму (`$multiply` — цена × количество).
+- **стр. 365** — сортировка по количеству, `-1` — по убыванию.
+- **стр. 366** — первые пять.
 
 ```js
-325     const revenue = totals?.revenue || 0;
-326     const orders = totals?.count || 0;
-327
-328     res.status(200).json({
-329       data: {
-330         revenue,
-331         orders,
-332         avgOrder: orders ? revenue / orders : 0,
-333         byStatus,
-334         topProducts,
-335       }
-336     });
+369     const revenue = totals?.revenue || 0;
+370     const orders = totals?.count || 0;
+371
+372     res.status(200).json({
+373       data: {
+374         revenue,
+375         orders,
+376         avgOrder: orders ? revenue / orders : 0,
+377         byStatus,
+378         topProducts,
+379       }
+380     });
 ```
 
-- **стр. 325–326** — если заказов не было (`totals` — `undefined`), ставим 0.
-- **стр. 332** — средний чек: выручка / количество; если заказов 0 — 0 (на ноль не делим).
-- **стр. 328–336** — ответ одним объектом.
+- **стр. 369–370** — если заказов не было (`totals` — `undefined`), ставим 0.
+- **стр. 376** — средний чек: выручка / количество; если заказов 0 — 0 (на ноль не делим).
+- **стр. 372–380** — ответ одним объектом.
 
-### Функция `getAllOrders` — список заказов (стр. 344–359)
+### Функция `getAllOrders` — список заказов (стр. 388–403)
 
 - **Кто вызывает:** `GET /api/orders` (стр. 21). Фронт: `ManagerOrdersPage` (`load`), с параметрами `?status=paid&search=anna`.
 
 ```js
-346     const { status, search } = req.query;
-347     const query = {};
-348     if (status && status !== 'all') query.status = status;
-349     if (search) {
-350       const rx = new RegExp(String(search).trim(), 'i');
-351       query.$or = [{ orderNumber: rx }, { 'customer.name': rx }, { 'customer.email': rx }];
-352     }
-353     const orders = await Order.find(query).sort({ createdAt: -1 }).limit(200);
-354     res.status(200).json({ data: orders });
+390     const { status, search } = req.query;
+391     const query = {};
+392     if (status && status !== 'all') query.status = status;
+393     if (search) {
+394       const rx = new RegExp(String(search).trim(), 'i');
+395       query.$or = [{ orderNumber: rx }, { 'customer.name': rx }, { 'customer.email': rx }];
+396     }
+397     const orders = await Order.find(query).sort({ createdAt: -1 }).limit(200);
+398     res.status(200).json({ data: orders });
 ```
 
-- **стр. 346** — параметры из адреса.
-- **стр. 347** — пустое условие поиска.
-- **стр. 348** — выбран статус (и это не «все») — добавляем фильтр по статусу.
-- **стр. 350** — `new RegExp(текст, 'i')` — регулярное выражение «содержит этот текст», `i` — без учёта регистра.
-- **стр. 351** — `$or` — подходит, если текст найден **хотя бы в одном** поле: номер заказа, имя или почта. `'customer.name'` — поле внутри вложенного объекта.
-- **стр. 353** — `find(условие)` — найти заказы; `.sort({ createdAt: -1 })` — новые сверху; `.limit(200)` — не больше 200.
-- **стр. 354** — ответ.
+- **стр. 390** — параметры из адреса.
+- **стр. 391** — пустое условие поиска.
+- **стр. 392** — выбран статус (и это не «все») — добавляем фильтр по статусу.
+- **стр. 394** — `new RegExp(текст, 'i')` — регулярное выражение «содержит этот текст», `i` — без учёта регистра.
+- **стр. 395** — `$or` — подходит, если текст найден **хотя бы в одном** поле: номер заказа, имя или почта. `'customer.name'` — поле внутри вложенного объекта.
+- **стр. 397** — `find(условие)` — найти заказы; `.sort({ createdAt: -1 })` — новые сверху; `.limit(200)` — не больше 200.
+- **стр. 398** — ответ.
 
-### Функция `getOrderById` (стр. 362–371)
+### Функция `getOrderById` (стр. 406–415)
 
 ```js
-364     const order = await Order.findById(req.params.id);
-365     if (!order) return res.status(404).send({ message: 'Order not found' });
-366     res.status(200).json({ data: order });
+408     const order = await Order.findById(req.params.id);
+409     if (!order) return res.status(404).send({ message: 'Order not found' });
+410     res.status(200).json({ data: order });
 ```
 
 - **Кто вызывает:** `GET /api/orders/:id` (стр. 24). Со страниц сейчас не вызывается.
-- **стр. 364–366** — найти по id; нет — 404; есть — 200.
+- **стр. 408–410** — найти по id; нет — 404; есть — 200.
 
-### Функция `updateOrderStatus` (стр. 374–387)
+### Функция `updateOrderStatus` (стр. 418–431)
 
 - **Кто вызывает:** `PATCH /api/orders/:id/status` (стр. 23). Фронт: `ManagerOrdersPage` (`changeStatus`).
 
 ```js
-376     const { status } = req.body;
-377     if (!ALLOWED_STATUS.includes(status)) {
-378       return res.status(400).send({ message: 'Invalid status' });
-379     }
-380     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-381     if (!order) return res.status(404).send({ message: 'Order not found' });
-382     res.status(200).json({ data: order });
+420     const { status } = req.body;
+421     if (!ALLOWED_STATUS.includes(status)) {
+422       return res.status(400).send({ message: 'Invalid status' });
+423     }
+424     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+425     if (!order) return res.status(404).send({ message: 'Order not found' });
+426     res.status(200).json({ data: order });
 ```
 
-- **стр. 376** — новый статус из тела.
-- **стр. 377–379** — не из списка — 400.
-- **стр. 380** — найти заказ и поставить статус; `new: true` — вернуть обновлённый.
-- **стр. 381** — нет такого — 404.
-- **стр. 382** — 200 и обновлённый заказ (фронт заменит его в списке).
+- **стр. 420** — новый статус из тела.
+- **стр. 421–423** — не из списка — 400.
+- **стр. 424** — найти заказ и поставить статус; `new: true` — вернуть обновлённый.
+- **стр. 425** — нет такого — 404.
+- **стр. 426** — 200 и обновлённый заказ (фронт заменит его в списке).
 
-### Функция `getOrderBySession` (стр. 390–406)
+### Функция `getOrderBySession` (стр. 434–450)
 
 - **Кто вызывает:** `GET /api/orders/by-session/:sessionId` (стр. 19). Фронт: `OrderSuccessPage` — Stripe вернул покупателя с `?session_id=...`.
 
 ```js
-392     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });
-393     if (!order) return res.status(404).send({ message: 'Order not found' });
-394     res.status(200).json({
-395       data: {
-396         orderNumber: order.orderNumber,
-397         status: order.status,
-398         total: order.total,
-399         email: order.customer.email,
-400       }
-401     });
+436     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });
+437     if (!order) return res.status(404).send({ message: 'Order not found' });
+438     res.status(200).json({
+439       data: {
+440         orderNumber: order.orderNumber,
+441         status: order.status,
+442         total: order.total,
+443         email: order.customer.email,
+444       }
+445     });
 ```
 
-- **стр. 392** — ищем заказ, у которого `payment.sessionId` равен id из адреса (его записали на стр. 163).
-- **стр. 394–401** — отдаём **не весь заказ**, а только номер, статус, сумму и почту: адрес открыт без входа, лишнего показывать не нужно.
+- **стр. 436** — ищем заказ, у которого `payment.sessionId` равен id из адреса (его записали на стр. 196).
+- **стр. 438–445** — отдаём **не весь заказ**, а только номер, статус, сумму и почту: адрес открыт без входа, лишнего показывать не нужно.
 
-- **стр. 408–416** — экспорт семи функций.
+- **стр. 452–460** — экспорт семи функций.
 
 ---
 
@@ -2408,51 +2520,6 @@ const имя = async (req, res) => {
 - **стр. 21** — запуск.
 
 **back/seed/productsData.json** — массив объектов-товаров: `file_name`, `model_name`, `color_palette`, `details`, `style`, `category`, `price`. Поля `stock` там нет, поэтому после заполнения остаток не отслеживается.
-
-## 7.2 back/seed/makeManager.js — выдать роль
-
-Запуск: `node seed/makeManager.js почта@example.com manager` (или `admin`).
-
-```js
-7  const start = async () => {
-8    const email = process.argv[2];
-9    const role = process.argv[3] || 'manager';
-10
-11   if (!email) {
-12     console.error('Provide an email:  node seed/makeManager.js user@example.com');
-13     process.exit(1);
-14   }
-15
-16   try {
-17     await connectDB(process.env.MONGO_URI);
-18     const user = await User.findOneAndUpdate({ email }, { role }, { new: true });
-19     if (!user) {
-20       console.error(`User with email "${email}" not found. Register with this email first.`);
-21       process.exit(1);
-22     }
-23     console.log(`Done: ${user.email} now has role="${user.role}"`);
-24     process.exit(0);
-25   } catch (error) {
-26     console.log(error.message);
-27     process.exit(1);
-28   }
-29 };
-30
-31 start();
-```
-
-- **стр. 1–5** — `dotenv`, `connectDB`, модель `User`, чтение `.env`.
-- **стр. 8** — `process.argv` — массив слов команды: `[0]` путь к node, `[1]` путь к скрипту, `[2]` — почта.
-- **стр. 9** — `[3]` — роль; если не указана — `manager`.
-- **стр. 11–14** — почту не указали — подсказка и выход с ошибкой.
-- **стр. 18** — найти пользователя по почте и поставить роль; вернуть обновлённого.
-- **стр. 19–22** — нет такого пользователя — сначала нужно зарегистрироваться на сайте.
-- **стр. 23–24** — готово.
-
-Почему роль выдаётся скриптом, а не на сайте: так на сервере нет ни одного адреса, через который можно стать менеджером.
-
-
----
 
 # Часть 8. Сайт: запуск, настройки, связь с сервером
 
@@ -2607,59 +2674,78 @@ const имя = async (req, res) => {
 2
 3  // One place that knows the address of the server. On the development machine
 4  // it is the local server; anywhere else it is the deployed one.
-5  const isLocalhost =
-6    typeof window !== 'undefined' &&
-7    /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
-8
-9  export const API_BASE_URL = isLocalhost
-10   ? 'http://localhost:5000'
-11   : import.meta.env.VITE_API_URL || 'https://darinshandmade.onrender.com';
-12
-13 // Same value under the shorter name used by the order and account pages.
-14 export const API = API_BASE_URL;
+5  const hostname = window.location.hostname;
+6  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+7
+8  let baseUrl = 'https://darinshandmade.onrender.com';
+9  if (isLocalhost) {
+10   baseUrl = 'http://localhost:5000';
+11 } else if (import.meta.env.VITE_API_URL) {
+12   baseUrl = import.meta.env.VITE_API_URL;
+13 }
+14
+15 export const API_BASE_URL = baseUrl;
+16
+17 // Same value under the shorter name used by the order and account pages.
+18 export const API = API_BASE_URL;
 ```
 
 - **стр. 1** — библиотека axios — отправка HTTP-запросов.
-- **стр. 5–7** — `isLocalhost` — открыт ли сайт на своём компьютере. `typeof window !== 'undefined'` — мы в браузере. `window.location.hostname` — имя сайта в адресной строке. Регулярное выражение проверяет, что это `localhost` или `127.0.0.1`.
-- **стр. 9–11** — адрес сервера: на своём компьютере — `http://localhost:5000`; иначе — переменная `VITE_API_URL` (Vite подставляет её при сборке через `import.meta.env`), а если её нет — адрес на Render.
-- **стр. 14** — тот же адрес под коротким именем `API`. Сейчас в коде не используется.
+- **стр. 5** — `window.location.hostname` — имя сайта в адресной строке: `localhost` на своём компьютере, `darinshandmade.netlify.app` в интернете.
+- **стр. 6** — `isLocalhost` — открыт ли сайт на своём компьютере: имя равно `localhost` или `127.0.0.1`.
+- **стр. 8** — по умолчанию — адрес сервера на Render. `let`, потому что ниже он может поменяться.
+- **стр. 9–10** — на своём компьютере — локальный сервер `http://localhost:5000`.
+- **стр. 11–12** — иначе, если задана переменная `VITE_API_URL` (Vite подставляет её при сборке через `import.meta.env`), — берём её.
+- **стр. 15** — экспортируем итоговый адрес под именем `API_BASE_URL`.
+- **стр. 18** — тот же адрес под коротким именем `API`. Сейчас в коде не используется.
 
 ```js
-16 const api = axios.create({
-17   baseURL: API_BASE_URL,
-18 });
+20 const api = axios.create({
+21   baseURL: API_BASE_URL,
+22 });
 ```
 
-- **стр. 16–18** — `axios.create` — настроенная копия axios. Теперь `api.get('/api/products')` сам добавит адрес сервера в начало. Методы: `api.get(адрес, настройки)`, `api.post(адрес, тело, настройки)`, `api.put`, `api.patch`, `api.delete(адрес, настройки)`. Каждый возвращает Promise: `.then(response => ...)` — успех (код 2xx), `.catch(error => ...)` — ошибка (сеть или код 4xx/5xx). Ответ сервера лежит в `response.data`; сообщение ошибки — в `error.response.data.message`.
+- **стр. 20–22** — `axios.create` — настроенная копия axios. Теперь `api.get('/api/products')` сам добавит адрес сервера в начало. Методы: `api.get(адрес, настройки)`, `api.post(адрес, тело, настройки)`, `api.put`, `api.patch`, `api.delete(адрес, настройки)`. Каждый возвращает Promise: `.then(response => ...)` — успех (код 2xx), `.catch(error => ...)` — ошибка (сеть или код 4xx/5xx). Ответ сервера лежит в `response.data`; сообщение ошибки — в `error.response.data.message`.
 
 ```js
-20 // Builds the full address of a picture that the server keeps in /uploads,
-21 // for example: imageUrl('uploads/pink.jpg') -> http://localhost:5000/uploads/pink.jpg
-22 export const imageUrl = (fileName) => {
-23   if (!fileName) return '';
-24   return `${API_BASE_URL}/${String(fileName).replace(/^\//, '')}`;
-25 };
+24 // Builds the full address of a picture that the server keeps in /uploads,
+25 // for example: imageUrl('uploads/pink.jpg') -> http://localhost:5000/uploads/pink.jpg
+26 export const imageUrl = (fileName) => {
+27   if (!fileName) {
+28     return '';
+29   }
+30
+31   // "/uploads/pink.jpg" -> "uploads/pink.jpg", so the address has no "//".
+32   let cleanName = String(fileName);
+33   if (cleanName.startsWith('/')) {
+34     cleanName = cleanName.slice(1);
+35   }
+36
+37   return `${API_BASE_URL}/${cleanName}`;
+38 };
 ```
 
 **Функция `imageUrl(fileName)`** — полный адрес картинки товара.
-- **Кто вызывает:** `CartContext` (стр. 46, 121), `BeadedBagsPage`, `BraceletsPage`, `ProductDetailPage`, `ManagerProductsPage`.
-- **стр. 23** — имени нет — пустая строка.
-- **стр. 24** — адрес сервера + `/` + путь. `replace(/^\//, '')` — убрать слеш в начале пути, если он есть, чтобы не получилось `//`. Картинку по этому адресу отдаёт `express.static` на сервере.
+- **Кто вызывает:** `CartContext` (стр. 46, 123), `BeadedBagsPage`, `BraceletsPage`, `ProductDetailPage`, `ManagerProductsPage`.
+- **стр. 27–29** — имени нет — пустая строка.
+- **стр. 32** — имя файла строкой (`let`, потому что дальше может поменяться).
+- **стр. 33–35** — если путь начинается со `/`, отрезаем первый символ (`slice(1)`), чтобы в адресе не получилось `//`.
+- **стр. 37** — адрес сервера + `/` + путь. Картинку по этому адресу отдаёт `express.static` на сервере.
 
 ```js
-27 // The token is kept in localStorage after login and has to be sent with
-28 // every protected request, in the header the server expects.
-29 export const authHeader = (token) => {
-30   return { headers: { Authorization: `Bearer ${token}` } };
-31 };
-32
-33 export default api;
+40 // The token is kept in localStorage after login and has to be sent with
+41 // every protected request, in the header the server expects.
+42 export const authHeader = (token) => {
+43   return { headers: { Authorization: `Bearer ${token}` } };
+44 };
+45
+46 export default api;
 ```
 
 **Функция `authHeader(token)`** — настройки запроса с заголовком входа.
 - **Кто вызывает:** `App.jsx`, `CartContext.jsx`, `CheckoutPage`, `ManagerProductsPage`, `ManagerOrdersPage`.
-- **стр. 30** — возвращает `{ headers: { Authorization: 'Bearer <токен>' } }`. Передаётся последним аргументом в `api.get/post/...`. На сервере этот заголовок читает `protect` (стр. 7).
-- **стр. 33** — `export default api` — главный экспорт файла. Импортируется как `import api, { imageUrl, authHeader } from '../api'` — `api` без скобок, остальное в фигурных скобках.
+- **стр. 43** — возвращает `{ headers: { Authorization: 'Bearer <токен>' } }`. Передаётся последним аргументом в `api.get/post/...`. На сервере этот заголовок читает `protect` (стр. 5).
+- **стр. 46** — `export default api` — главный экспорт файла. Импортируется как `import api, { imageUrl, authHeader } from '../api'` — `api` без скобок, остальное в фигурных скобках.
 
 ## 8.9 front/src/App.jsx — главный компонент, вход и маршруты
 
@@ -2831,8 +2917,8 @@ const имя = async (req, res) => {
 **Одна позиция корзины на фронте** выглядит так: `{ id, name, category, image, price, quantity }`, у кастомной сумки ещё `config`.
 
 ```jsx
-4  // A context lets every page read the cart without passing it down as a prop.
-5  const CartContext = createContext();
+4 // A context lets every page read the cart without passing it down as a prop.
+5 const CartContext = createContext();
 ```
 
 - **стр. 5** — `createContext()` создаёт «канал», по которому данные корзины раздаются всем компонентам.
@@ -2863,8 +2949,17 @@ const имя = async (req, res) => {
 23 // server cart cannot hold it. For a signed in user it lives in this browser.
 24 const CUSTOM_KEY = 'customItems';
 25
-26 const loadCustomItems = () => { ...то же, что loadGuestCart, но для CUSTOM_KEY... };   // стр. 26–32
-34 const saveCustomItems = (items) => { localStorage.setItem(CUSTOM_KEY, JSON.stringify(items)); }; // стр. 34–36
+26 const loadCustomItems = () => {
+27   try {
+28     return JSON.parse(localStorage.getItem(CUSTOM_KEY)) || [];
+29   } catch {
+30     return [];
+31   }
+32 };
+33
+34 const saveCustomItems = (items) => {
+35   localStorage.setItem(CUSTOM_KEY, JSON.stringify(items));
+36 };
 37
 38 // Custom bags get an id like "custom-1718000000000".
 39 const isCustom = (id) => String(id).startsWith('custom-');
@@ -2873,7 +2968,7 @@ const имя = async (req, res) => {
 - **стр. 24** — ключ для кастомных сумок вошедшего пользователя.
 - **стр. 26–32** — **`loadCustomItems()`** — прочитать их (так же, как `loadGuestCart`).
 - **стр. 34–36** — **`saveCustomItems(items)`** — сохранить.
-- **стр. 39** — **`isCustom(id)`** — сумка ли это из конструктора: её id начинается с `custom-` (так его создаёт `CustomStudioPage`, стр. 187). `String(id)` — на случай, если id не строка.
+- **стр. 39** — **`isCustom(id)`** — сумка ли это из конструктора: её id начинается с `custom-` (так его создаёт `CustomStudioPage`, стр. 213). `String(id)` — на случай, если id не строка.
 
 ```jsx
 41 // Turns one row of the server cart into the simple shape the pages display.
@@ -2890,7 +2985,7 @@ const имя = async (req, res) => {
 - **`toCartItem(item)`** — превращает позицию серверной корзины (после `populate` в ней целый товар `item.product`) в простой объект для страниц. Вызывается из `fetchCart` (стр. 67).
 - **стр. 46** — полный адрес картинки через `imageUrl`.
 
-### Компонент `CartProvider` (стр. 51–249)
+### Компонент `CartProvider` (стр. 51–256)
 
 ```jsx
 51 const CartProvider = ({ children, token }) => {
@@ -2906,7 +3001,7 @@ const имя = async (req, res) => {
 
 #### Функция `fetchCart()` (стр. 58–72) — загрузить корзину
 
-- **Кто вызывает:** эффект (стр. 80, 87, 105), `addToCart` (стр. 135), `removeFromCart` (стр. 160), `updateQuantity` при ошибке (стр. 202), `clearCart` (стр. 218).
+- **Кто вызывает:** эффект (стр. 80, 87, 107), `addToCart` (стр. 137), `removeFromCart` (стр. 162), `updateQuantity` при ошибке (стр. 209), `clearCart` (стр. 225).
 
 ```jsx
 58   const fetchCart = () => {
@@ -2930,276 +3025,287 @@ const имя = async (req, res) => {
 - **стр. 64–65** — вошедший — `GET /api/cart` → на сервере `getCart`.
 - **стр. 67** — `response.data.data.items` — позиции серверной корзины (первое `data` — от axios, второе — поле, которое отправил сервер). `map(toCartItem)` — в простой вид. Затем `...loadCustomItems()` — добавляем сумки из конструктора. `...` (spread) — «высыпать» элементы массива в новый массив.
 
-#### Эффект: при входе и выходе (стр. 75–107)
+#### Эффект: при входе и выходе (стр. 75–109)
 
 ```jsx
-75   useEffect(() => {
-76     const justLoggedIn = token && !prevToken.current;
-77     prevToken.current = token;
+75    useEffect(() => {
+76      const justLoggedIn = token && !prevToken.current;
+77      prevToken.current = token;
 78
-79     if (!justLoggedIn) {
-80       fetchCart();
-81       return;
-82     }
+79      if (!justLoggedIn) {
+80        fetchCart();
+81        return;
+82      }
 83
-84     // The visitor filled a cart before logging in, so move it to the server.
-85     const guestItems = loadGuestCart();
-86     if (guestItems.length === 0) {
-87       fetchCart();
-88       return;
-89     }
+84      // The visitor filled a cart before logging in, so move it to the server.
+85      const guestItems = loadGuestCart();
+86      if (guestItems.length === 0) {
+87        fetchCart();
+88        return;
+89      }
 90
-91     // Custom bags cannot go to the server, so they move to their own list.
-92     const customItems = guestItems.filter((item) => isCustom(item.id));
-93     saveCustomItems([...loadCustomItems(), ...customItems]);
+91      // Custom bags cannot go to the server, so they move to their own list.
+92      const customItems = guestItems.filter((item) => isCustom(item.id));
+93      saveCustomItems([...loadCustomItems(), ...customItems]);
 94
-95     // One request per unit, because the server adds one item at a time.
-96     const products = guestItems.filter((item) => !isCustom(item.id));
-97     const requests = products.flatMap((item) =>
-98       Array.from({ length: item.quantity }, () =>
-99         api.post('/api/cart', { productId: item.id }, authHeader(token))
-100      )
-101    );
-102
-103    Promise.allSettled(requests).then(() => {
-104      localStorage.removeItem(GUEST_KEY);
-105      fetchCart();
-106    });
-107  }, [token]);
+95      // The server adds one unit per request, so a product with quantity 3
+96      // is sent 3 times.
+97      const products = guestItems.filter((item) => !isCustom(item.id));
+98      const requests = [];
+99      for (const item of products) {
+100       for (let i = 0; i < item.quantity; i++) {
+101         requests.push(api.post('/api/cart', { productId: item.id }, authHeader(token)));
+102       }
+103     }
+104
+105     Promise.allSettled(requests).then(() => {
+106       localStorage.removeItem(GUEST_KEY);
+107       fetchCart();
+108     });
+109   }, [token]);
 ```
 
-- **стр. 107** — `[token]` — эффект срабатывает при первой отрисовке и каждый раз, когда меняется токен (вход, выход).
+- **стр. 109** — `[token]` — эффект срабатывает при первой отрисовке и каждый раз, когда меняется токен (вход, выход).
 - **стр. 76** — «только что вошёл»: токен есть сейчас, а раньше не было.
 - **стр. 77** — запоминаем текущий токен на следующий раз.
 - **стр. 79–82** — не вход (первая загрузка, выход) — просто загружаем корзину.
 - **стр. 85–89** — гостевая корзина пустая — переносить нечего, загружаем серверную.
 - **стр. 92–93** — кастомные сумки гостя переносим в `customItems` (к тем, что уже там есть).
-- **стр. 96** — обычные товары гостя.
-- **стр. 97–101** — для каждого товара делаем столько запросов `POST /api/cart`, сколько штук (сервер добавляет по одной). `Array.from({ length: 3 }, () => запрос)` — массив из трёх запросов. `flatMap` склеивает массивы всех товаров в один.
-- **стр. 103** — `Promise.allSettled` ждёт **все** запросы, даже если какие-то упали.
-- **стр. 104** — гостевую корзину стираем.
-- **стр. 105** — загружаем итоговую корзину с сервера.
+- **стр. 97** — обычные товары гостя.
+- **стр. 98** — пустой список запросов.
+- **стр. 99** — внешний цикл: по каждому товару.
+- **стр. 100–102** — внутренний цикл: столько раз, сколько штук этого товара. Каждый раз добавляем в список запрос `POST /api/cart` — сервер добавляет по одной штуке. Товар с количеством 3 — три запроса.
+- **стр. 105** — `Promise.allSettled` ждёт **все** запросы, даже если какие-то упали.
+- **стр. 106** — гостевую корзину стираем.
+- **стр. 107** — загружаем итоговую корзину с сервера.
 
-#### Функция `addToCart(product)` (стр. 109–141) — добавить товар каталога
+#### Функция `addToCart(product)` (стр. 111–143) — добавить товар каталога
 
 - **Кто вызывает:** кнопки Add to Cart в `BeadedBagsPage`, `BraceletsPage`, `ProductDetailPage`.
 - **Получает:** товар в том виде, как его вернул сервер (`_id`, `model_name`, ...).
 
 ```jsx
-109  const addToCart = (product) => {
-110    if (!token) {
-111      const guest = loadGuestCart();
-112      const existing = guest.find((item) => item.id === product._id);
-113
-114      if (existing) {
-115        existing.quantity += 1;
-116      } else {
-117        guest.push({
-118          id: product._id,
-119          name: product.model_name,
-120          category: product.category,
-121          image: imageUrl(product.file_name),
-122          price: product.price,
-123          quantity: 1
-124        });
-125      }
-126
-127      saveGuestCart(guest);
-128      setItems([...guest]);
-129      return;
-130    }
-131
-132    api
-133      .post('/api/cart', { productId: product._id }, authHeader(token))
-134      .then(() => {
-135        fetchCart();
-136      })
-137      .catch((error) => {
-138        console.log(error);
-139        alert(error.response?.data?.message || 'Failed to add to cart');
-140      });
-141  };
+111   const addToCart = (product) => {
+112     if (!token) {
+113       const guest = loadGuestCart();
+114       const existing = guest.find((item) => item.id === product._id);
+115
+116       if (existing) {
+117         existing.quantity += 1;
+118       } else {
+119         guest.push({
+120           id: product._id,
+121           name: product.model_name,
+122           category: product.category,
+123           image: imageUrl(product.file_name),
+124           price: product.price,
+125           quantity: 1
+126         });
+127       }
+128
+129       saveGuestCart(guest);
+130       setItems([...guest]);
+131       return;
+132     }
+133
+134     api
+135       .post('/api/cart', { productId: product._id }, authHeader(token))
+136       .then(() => {
+137         fetchCart();
+138       })
+139       .catch((error) => {
+140         console.log(error);
+141         alert(error.response?.data?.message || 'Failed to add to cart');
+142       });
+143   };
 ```
 
-- **стр. 110–130** — **гость**:
-  - **стр. 111** — читаем корзину;
-  - **стр. 112** — ищем этот товар (`find` — первый подходящий или `undefined`);
-  - **стр. 114–115** — есть — +1;
-  - **стр. 116–125** — нет — добавляем позицию в простом виде;
-  - **стр. 127** — сохраняем в браузере;
-  - **стр. 128** — `setItems([...guest])` — **новый** массив (копия). React перерисовывает, только если получил новый массив, а не тот же изменённый.
-- **стр. 132–136** — **вошедший**: `POST /api/cart` → на сервере `addToCart`; после успеха перезагружаем корзину.
-- **стр. 139** — ошибка — всплывающее окно с сообщением сервера.
+- **стр. 112–132** — **гость**:
+  - **стр. 113** — читаем корзину;
+  - **стр. 114** — ищем этот товар (`find` — первый подходящий или `undefined`);
+  - **стр. 116–117** — есть — +1;
+  - **стр. 118–127** — нет — добавляем позицию в простом виде;
+  - **стр. 129** — сохраняем в браузере;
+  - **стр. 130** — `setItems([...guest])` — **новый** массив (копия). React перерисовывает, только если получил новый массив, а не тот же изменённый.
+- **стр. 134–138** — **вошедший**: `POST /api/cart` → на сервере `addToCart`; после успеха перезагружаем корзину.
+- **стр. 141** — ошибка — всплывающее окно с сообщением сервера.
 
-#### Функция `removeFromCart(productId)` (стр. 143–165) — убрать позицию
+#### Функция `removeFromCart(productId)` (стр. 145–167) — убрать позицию
 
 - **Кто вызывает:** `CartPage` — иконка мусорки.
 
 ```jsx
-143  const removeFromCart = (productId) => {
-144    if (!token) {
-145      const guest = loadGuestCart().filter((item) => item.id !== productId);
-146      saveGuestCart(guest);
-147      setItems(guest);
-148      return;
-149    }
-150
-151    if (isCustom(productId)) {
-152      saveCustomItems(loadCustomItems().filter((item) => item.id !== productId));
-153      setItems(items.filter((item) => item.id !== productId));
-154      return;
-155    }
-156
-157    api
-158      .delete(`/api/cart/${productId}`, authHeader(token))
-159      .then(() => {
-160        fetchCart();
-161      })
+145   const removeFromCart = (productId) => {
+146     if (!token) {
+147       const guest = loadGuestCart().filter((item) => item.id !== productId);
+148       saveGuestCart(guest);
+149       setItems(guest);
+150       return;
+151     }
+152
+153     if (isCustom(productId)) {
+154       saveCustomItems(loadCustomItems().filter((item) => item.id !== productId));
+155       setItems(items.filter((item) => item.id !== productId));
+156       return;
+157     }
+158
+159     api
+160       .delete(`/api/cart/${productId}`, authHeader(token))
+161       .then(() => {
+162         fetchCart();
+163       })
 ...
-165  };
+167   };
 ```
 
-- **стр. 144–149** — гость: оставляем всё, кроме этой позиции, сохраняем.
-- **стр. 151–155** — вошедший и это кастомная сумка: убираем из `customItems` и из списка на экране. На сервер не ходим — там её нет.
-- **стр. 157–161** — вошедший и товар каталога: `DELETE /api/cart/:id` → на сервере `removeFromCart`, потом перезагрузка.
+- **стр. 146–151** — гость: оставляем всё, кроме этой позиции, сохраняем.
+- **стр. 153–157** — вошедший и это кастомная сумка: убираем из `customItems` и из списка на экране. На сервер не ходим — там её нет.
+- **стр. 159–163** — вошедший и товар каталога: `DELETE /api/cart/:id` → на сервере `removeFromCart`, потом перезагрузка.
 
-#### Функция `addCustomItem(item)` (стр. 169–178) — добавить сумку из конструктора
+#### Функция `addCustomItem(item)` (стр. 171–180) — добавить сумку из конструктора
 
-- **Кто вызывает:** `CustomStudioPage` (`handleAddToCart`, стр. 186).
+- **Кто вызывает:** `CustomStudioPage` (`handleAddToCart`, стр. 210).
 
 ```jsx
-169  const addCustomItem = (item) => {
-170    const updated = [...items, item];
-171    setItems(updated);
-172
-173    if (!token) {
-174      saveGuestCart(updated);
-175      return;
-176    }
-177    saveCustomItems([...loadCustomItems(), item]);
-178  };
+171   const addCustomItem = (item) => {
+172     const updated = [...items, item];
+173     setItems(updated);
+174
+175     if (!token) {
+176       saveGuestCart(updated);
+177       return;
+178     }
+179     saveCustomItems([...loadCustomItems(), item]);
+180   };
 ```
 
-- **стр. 170–171** — добавляем на экран.
-- **стр. 173–176** — гость — сохраняем всю корзину в `guestCart`.
-- **стр. 177** — вошедший — добавляем сумку в `customItems`.
+- **стр. 172–173** — добавляем на экран.
+- **стр. 175–178** — гость — сохраняем всю корзину в `guestCart`.
+- **стр. 179** — вошедший — добавляем сумку в `customItems`.
 
-#### Функция `updateQuantity(id, newQuantity)` (стр. 180–204) — изменить количество
+#### Функция `updateQuantity(id, newQuantity)` (стр. 182–211) — изменить количество
 
 - **Кто вызывает:** `CartPage` — кнопки − и +.
 
 ```jsx
-180  const updateQuantity = (id, newQuantity) => {
-181    if (newQuantity < 1) return;
-182    const updated = items.map((item) =>
-183      item.id === id ? { ...item, quantity: newQuantity } : item
-184    );
-185    setItems(updated);
-186
-187    if (!token) {
-188      saveGuestCart(updated);
-189      return;
-190    }
-191
-192    if (isCustom(id)) {
-193      saveCustomItems(updated.filter((item) => isCustom(item.id)));
-194      return;
-195    }
-196
-197    // The new number is already on the screen; the server keeps it for next time.
-198    api
-199      .patch(`/api/cart/${id}`, { quantity: newQuantity }, authHeader(token))
-200      .catch((error) => {
-201        console.log(error);
-202        fetchCart();
-203      });
-204  };
+182   const updateQuantity = (id, newQuantity) => {
+183     if (newQuantity < 1) return;
+184
+185     // A new list where only the changed item gets the new quantity.
+186     const updated = items.map((item) => {
+187       if (item.id === id) {
+188         return { ...item, quantity: newQuantity };
+189       }
+190       return item;
+191     });
+192     setItems(updated);
+193
+194     if (!token) {
+195       saveGuestCart(updated);
+196       return;
+197     }
+198
+199     if (isCustom(id)) {
+200       saveCustomItems(updated.filter((item) => isCustom(item.id)));
+201       return;
+202     }
+203
+204     // The new number is already on the screen; the server keeps it for next time.
+205     api
+206       .patch(`/api/cart/${id}`, { quantity: newQuantity }, authHeader(token))
+207       .catch((error) => {
+208         console.log(error);
+209         fetchCart();
+210       });
+211   };
 ```
 
-- **стр. 181** — меньше 1 нельзя (для удаления — мусорка).
-- **стр. 182–184** — новый массив: у нужной позиции копия с новым количеством (`{ ...item, quantity }`), остальные без изменений.
-- **стр. 185** — сразу показываем на экране.
-- **стр. 187–190** — гость — сохраняем в браузере.
-- **стр. 192–195** — кастомная сумка вошедшего — сохраняем все кастомные позиции в `customItems`.
-- **стр. 198–199** — товар каталога вошедшего — `PATCH /api/cart/:id` → на сервере `updateQuantity`.
-- **стр. 200–203** — не получилось — перечитываем корзину с сервера, чтобы на экране было правильное число.
+- **стр. 183** — меньше 1 нельзя (для удаления — мусорка).
+- **стр. 186** — `map` строит новый массив, проходя по каждой позиции.
+- **стр. 187–189** — нужная позиция — возвращаем её копию с новым количеством (`{ ...item, quantity }` — все поля старой позиции плюс новое `quantity`).
+- **стр. 190** — остальные позиции — без изменений.
+- **стр. 192** — сразу показываем на экране.
+- **стр. 194–197** — гость — сохраняем в браузере.
+- **стр. 199–202** — кастомная сумка вошедшего — сохраняем все кастомные позиции в `customItems`.
+- **стр. 205–206** — товар каталога вошедшего — `PATCH /api/cart/:id` → на сервере `updateQuantity`.
+- **стр. 207–210** — не получилось — перечитываем корзину с сервера, чтобы на экране было правильное число.
 
-#### Функция `clearCart()` (стр. 206–223) — очистить корзину
+#### Функция `clearCart()` (стр. 213–230) — очистить корзину
 
 - **Кто вызывает:** `CartPage` (кнопка Clear all items), `OrderSuccessPage` (после оплаты).
 
 ```jsx
-206  const clearCart = () => {
-207    setItems([]);
-208
-209    if (!token) {
-210      localStorage.removeItem(GUEST_KEY);
-211      return;
-212    }
-213
-214    localStorage.removeItem(CUSTOM_KEY);
-215    api
-216      .delete('/api/cart', authHeader(token))
-217      .then(() => {
-218        fetchCart();
-219      })
+213   const clearCart = () => {
+214     setItems([]);
+215
+216     if (!token) {
+217       localStorage.removeItem(GUEST_KEY);
+218       return;
+219     }
+220
+221     localStorage.removeItem(CUSTOM_KEY);
+222     api
+223       .delete('/api/cart', authHeader(token))
+224       .then(() => {
+225         fetchCart();
+226       })
 ...
-223  };
+230   };
 ```
 
-- **стр. 207** — экран — пустая корзина.
-- **стр. 209–212** — гость — удалить ключ из браузера.
-- **стр. 214** — вошедший — удалить кастомные сумки.
-- **стр. 215–219** — `DELETE /api/cart` → на сервере `clearCart`, потом перечитать.
+- **стр. 214** — экран — пустая корзина.
+- **стр. 216–219** — гость — удалить ключ из браузера.
+- **стр. 221** — вошедший — удалить кастомные сумки.
+- **стр. 222–226** — `DELETE /api/cart` → на сервере `clearCart`, потом перечитать.
 
-#### Подсчёты (стр. 225–231)
+#### Подсчёты (стр. 232–238)
 
 ```jsx
-225  const getTotalPrice = () => {
-226    return items.reduce((total, item) => total + item.price * item.quantity, 0);
-227  };
-228
-229  const getTotalItems = () => {
-230    return items.reduce((total, item) => total + item.quantity, 0);
-231  };
+232   const getTotalPrice = () => {
+233     return items.reduce((total, item) => total + item.price * item.quantity, 0);
+234   };
+235
+236   const getTotalItems = () => {
+237     return items.reduce((total, item) => total + item.quantity, 0);
+238   };
 ```
 
 - **`getTotalPrice()`** — сумма корзины: `reduce` начинает с 0 и прибавляет цену × количество каждой позиции. Вызывают `CartPage`, `CheckoutPage`.
 - **`getTotalItems()`** — сколько штук всего. Вызывает `Header` (число на значке корзины).
 
-#### Что раздаётся всем (стр. 233–248)
+#### Что раздаётся всем (стр. 240–255)
 
 ```jsx
-233  return (
-234    <CartContext.Provider
-235      value={{
-236        items,
-237        addToCart,
-238        addCustomItem,
-239        removeFromCart,
-240        updateQuantity,
-241        getTotalPrice,
-242        clearCart,
-243        getTotalItems
-244      }}
-245    >
-246      {children}
-247    </CartContext.Provider>
-248  );
+240   return (
+241     <CartContext.Provider
+242       value={{
+243         items,
+244         addToCart,
+245         addCustomItem,
+246         removeFromCart,
+247         updateQuantity,
+248         getTotalPrice,
+249         clearCart,
+250         getTotalItems
+251       }}
+252     >
+253       {children}
+254     </CartContext.Provider>
+255   );
 ```
 
-- **стр. 234–245** — `Provider` раздаёт в «канал» объект с корзиной и всеми функциями.
-- **стр. 246** — внутри рисуется всё приложение (`children`).
+- **стр. 241–252** — `Provider` раздаёт в «канал» объект с корзиной и всеми функциями.
+- **стр. 253** — внутри рисуется всё приложение (`children`).
 
 ```jsx
-251 // Short way for a page to read the cart: const { items } = useCart();
-252 const useCart = () => useContext(CartContext);
-253
-254 export { CartProvider, useCart };
+258 // Short way for a page to read the cart: const { items } = useCart();
+259 const useCart = () => useContext(CartContext);
+260
+261 export { CartProvider, useCart };
 ```
 
-- **стр. 252** — **`useCart()`** — свой хук: `useContext(CartContext)` достаёт объект из «канала». Страница пишет `const { items, addToCart } = useCart();`.
-- **стр. 254** — экспорт двух имён.
+- **стр. 259** — **`useCart()`** — свой хук: `useContext(CartContext)` достаёт объект из «канала». Страница пишет `const { items, addToCart } = useCart();`.
+- **стр. 261** — экспорт двух имён.
 
 
 ---
@@ -3647,13 +3753,13 @@ const имя = async (req, res) => {
 - **стр. 4** — `useNavigate` (переход в корзину после добавления);
 - **стр. 8–11** — четыре фото размеров (`10x8.png` и т.д.);
 - **стр. 15–25** — десять фото сумки с разными ремешками для размеров Mini и Small;
-- **стр. 67–81** — 15 фото бусин разных цветов.
+- **стр. 93–107** — 15 фото бусин разных цветов.
 
 Каждый `import картинка from "./файл.png"` — Vite при сборке кладёт файл в готовый сайт и подставляет в переменную его адрес.
 
-**С сервером не общается.** Сумка попадает в корзину через `addCustomItem` (`CartContext.jsx`), а цену при оплате сервер считает сам (`OrderController.js`, стр. 15–16 и 68–85).
+**С сервером не общается.** Сумка попадает в корзину через `addCustomItem` (`CartContext.jsx`), а цену при оплате сервер считает сам (`OrderController.js`, стр. 15–16 и 90–127).
 
-### Данные конструктора (стр. 27–136)
+### Данные конструктора (стр. 27–162)
 
 ```jsx
 27 const SIZES = [
@@ -3690,223 +3796,257 @@ const имя = async (req, res) => {
 50 // Strap photos only exist for mini/small; other sizes fall back to the mini photo.
 51 // Mixed strap has a chain color (gold/silver); we pick its photo from chainImages.
 52 const strapImageFor = (strap, sizeId, chainColor = "gold") => {
-53   const set = strap.chainImages ? strap.chainImages[chainColor] || strap.chainImages.gold : strap.images;
-54   // No photo for this strap, so show the mini photo instead of breaking the page.
-55   if (!set) return strap.images?.mini ?? "";
-56   return set[sizeId] || set.mini;
-57 };
+53   // Step 1: find the set of photos for this strap ({ mini: ..., small: ... }).
+54   let set;
+55   if (strap.chainImages) {
+56     // Mixed strap: the set depends on the chain color. Unknown color -> gold.
+57     set = strap.chainImages[chainColor];
+58     if (!set) {
+59       set = strap.chainImages.gold;
+60     }
+61   } else {
+62     // Any other strap has one set.
+63     set = strap.images;
+64   }
+65
+66   // No set at all: return an empty picture instead of breaking the page.
+67   if (!set) {
+68     return "";
+69   }
+70
+71   // Step 2: the photo for this size. Medium and large have none, so mini is used.
+72   if (set[sizeId]) {
+73     return set[sizeId];
+74   }
+75   return set.mini;
+76 };
 ```
 
-**Функция `strapImageFor(strap, sizeId, chainColor)`** — какое фото показать для ремешка. Вызывается на стр. 167, 190, 292.
+**Функция `strapImageFor(strap, sizeId, chainColor)`** — какое фото показать для ремешка. Вызывается на стр. 193, 216, 318.
 - **стр. 52** — `chainColor = "gold"` — значение по умолчанию, если не передали.
-- **стр. 53** — набор фото: у Mixed — по цвету цепочки (если такого нет — золотой), у остальных — `images`.
-- **стр. 55** — набора нет — фото mini или пустая строка (`??` — если слева `null`/`undefined`).
-- **стр. 56** — фото для выбранного размера; для Medium и Large фото нет — берём mini.
+- **стр. 54** — шаг 1: найти набор фото ремешка — объект вида `{ mini: ..., small: ... }`.
+- **стр. 55–60** — у Mixed есть `chainImages`: набор берём по цвету цепочки, а если такого цвета нет — золотой.
+- **стр. 61–64** — у остальных ремешков один набор — `images`.
+- **стр. 67–69** — набора нет вообще — пустая строка вместо картинки, чтобы страница не сломалась.
+- **стр. 72–74** — шаг 2: есть фото для выбранного размера — возвращаем его.
+- **стр. 75** — для Medium и Large фото нет — берём mini.
 
 ```jsx
-59 // Display label for a strap; Mixed appends its chain color (e.g. "Mixed (Gold)").
-60 const strapLabelFor = (strap, chainColor) => {
-61   if (strap.id !== "mixed") return strap.label;
-62   return `${strap.label} (${chainColor === "gold" ? "Gold" : "Silver"})`;
-63 };
+78 // Display label for a strap; Mixed appends its chain color (e.g. "Mixed (Gold)").
+79 const strapLabelFor = (strap, chainColor) => {
+80   if (strap.id !== "mixed") {
+81     return strap.label;
+82   }
+83
+84   let colorName = "Silver";
+85   if (chainColor === "gold") {
+86     colorName = "Gold";
+87   }
+88   return `${strap.label} (${colorName})`;
+89 };
 ```
 
-**Функция `strapLabelFor(strap, chainColor)`** — название ремешка для показа. Вызывается на стр. 163 и 293.
-- **стр. 61** — не Mixed — просто название.
-- **стр. 62** — Mixed — «Mixed (Gold)» или «Mixed (Silver)».
+**Функция `strapLabelFor(strap, chainColor)`** — название ремешка для показа. Вызывается на стр. 189 и 319.
+- **стр. 80–82** — не Mixed — просто название.
+- **стр. 84–87** — Mixed: цвет по умолчанию «Silver», а если цепочка золотая — «Gold».
+- **стр. 88** — «Mixed (Gold)» или «Mixed (Silver)».
 
 ```jsx
-83 const COLORS = [
-84   { id: "aquamarine", name: "Aquamarine", hex: "#68c4e8", beads: beadsAquamarine },
+109 const COLORS = [
+110   { id: "aquamarine", name: "Aquamarine", hex: "#68c4e8", beads: beadsAquamarine },
 ...
-98   { id: "black", name: "Black", hex: "#494c4a", beads: beadsBlack },
-99 ];
+124   { id: "black", name: "Black", hex: "#494c4a", beads: beadsBlack },
+125 ];
 ```
 
-- **стр. 83–99** — 15 цветов бусин: код, название, цвет-запаска (если фото не загрузится) и фото бусин.
+- **стр. 109–125** — 15 цветов бусин: код, название, цвет-запаска (если фото не загрузится) и фото бусин.
 
 ```jsx
-101 const BagPreview = ({ image, alt }) => {
-102   return (
-103     <div className="relative w-full h-full">
-104       <img src={image} alt={alt} className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl" />
+127 const BagPreview = ({ image, alt }) => {
+128   return (
+129     <div className="relative w-full h-full">
+130       <img
 ...
-110   );
-111 };
+136   );
+137 };
 ```
 
-- **Компонент `BagPreview`** (стр. 101–111) — большое фото сумки с тенью. Используется на стр. 446.
+- **Компонент `BagPreview`** (стр. 127–137) — большое фото сумки с тенью. Используется на стр. 472.
 
 ```jsx
-113 const StepHeader = ({ step, total, title }) => {
-114   return (
-115     <div className="mb-6">
-116       <p ...>Step {step} of {total}</p>
-119       <h3 ...>{title}</h3>
-122     </div>
-123   );
-124 };
+139 const StepHeader = ({ step, total, title }) => {
+140   return (
+141     <div className="mb-6">
+142       <p className="font-['Centaur'] text-[13px] tracking-[3px] text-[#999] uppercase mb-1">
+143         Step {step} of {total}
+144       </p>
+145       <h3 className="font-['Dorsa'] text-[36px] tracking-[4px] text-black leading-none">
+146         {title}
+147       </h3>
+148     </div>
+149   );
+150 };
 ```
 
-- **Компонент `StepHeader`** (стр. 113–124) — заголовок шага: «Step 1 of 3» и «Choose Size». Используется на стр. 264, 288, 352.
+- **Компонент `StepHeader`** (стр. 139–150) — заголовок шага: «Step 1 of 3» и «Choose Size». Используется на стр. 290, 314, 378.
 
 ```jsx
-126 const STEPS = ["Size", "Strap", "Color"];
-127 // Names for the steps, so the code says STEP.SIZE instead of 0.
-128 const STEP = { SIZE: 0, STRAP: 1, COLOR: 2 };
-129
-130 const CHAIN_FINISHES = [
-131   { id: "gold", label: "Gold" },
-132   { id: "silver", label: "Silver" },
-133 ];
-134
-135 // How long the "Added ✓" state shows before redirecting to the cart.
-136 const REDIRECT_DELAY_MS = 1200;
-137
-138 // Shared look for selectable option buttons (size / strap / chain finish).
-139 const optionClass = (selected) => {
-140   return selected
-141     ? "border-black bg-black text-white"
-142     : "border-black/20 bg-white text-black hover:border-black/50";
-143 };
+152 const STEPS = ["Size", "Strap", "Color"];
+153 // Names for the steps, so the code says STEP.SIZE instead of 0.
+154 const STEP = { SIZE: 0, STRAP: 1, COLOR: 2 };
+155
+156 const CHAIN_FINISHES = [
+157   { id: "gold", label: "Gold" },
+158   { id: "silver", label: "Silver" },
+159 ];
+160
+161 // How long the "Added ✓" state shows before redirecting to the cart.
+162 const REDIRECT_DELAY_MS = 1200;
+163
+164 // Shared look for selectable option buttons (size / strap / chain finish).
+165 const optionClass = (selected) => {
+166   return selected
+167     ? "border-black bg-black text-white"
+168     : "border-black/20 bg-white text-black hover:border-black/50";
+169 };
 ```
 
-- **стр. 126** — названия трёх шагов (для вкладок).
-- **стр. 128** — номера шагов по именам.
-- **стр. 130–133** — два цвета цепочки для ремешка Mixed.
-- **стр. 136** — через 1,2 с после добавления — переход в корзину.
-- **стр. 139–143** — **функция `optionClass(selected)`** — стиль кнопки варианта: выбранная — чёрная, остальные — белые.
+- **стр. 152** — названия трёх шагов (для вкладок).
+- **стр. 154** — номера шагов по именам.
+- **стр. 156–159** — два цвета цепочки для ремешка Mixed.
+- **стр. 162** — через 1,2 с после добавления — переход в корзину.
+- **стр. 165–169** — **функция `optionClass(selected)`** — стиль кнопки варианта: выбранная — чёрная, остальные — белые.
 
-### Компонент `CustomStudioPage` (стр. 145–524)
+### Компонент `CustomStudioPage` (стр. 171–550)
 
 ```jsx
-145 const CustomStudioPage = () => {
-146   const [step, setStep] = useState(0);
-147   const [config, setConfig] = useState({
-148     size: "small", // Small is chosen first because it is the most popular size
-149     strap: "golden",
-150     chainColor: "gold",
-151     color: COLORS[0],
-152   });
-153   const [addedToCart, setAddedToCart] = useState(false);
-154   const [lightbox, setLightbox] = useState(null);
-155   const { addCustomItem } = useCart();
-156   const navigate = useNavigate();
+171 const CustomStudioPage = () => {
+172   const [step, setStep] = useState(0);
+173   const [config, setConfig] = useState({
+174     size: "small", // Small is chosen first because it is the most popular size
+175     strap: "golden",
+176     chainColor: "gold",
+177     color: COLORS[0],
+178   });
+179   const [addedToCart, setAddedToCart] = useState(false);
+180   const [lightbox, setLightbox] = useState(null);
+181   const { addCustomItem } = useCart();
+182   const navigate = useNavigate();
 ```
 
-- **стр. 146** — текущий шаг (0 — размер).
-- **стр. 147–152** — выбор покупателя: размер Small, ремешок Golden, цепочка золотая, цвет — первый из списка (целый объект цвета).
-- **стр. 153** — добавлена ли сумка в корзину (для надписи и перехода).
-- **стр. 154** — что показать в увеличенном просмотре (`null` — ничего).
-- **стр. 155** — функция добавления сумки из корзины.
-- **стр. 156** — функция перехода.
+- **стр. 172** — текущий шаг (0 — размер).
+- **стр. 173–178** — выбор покупателя: размер Small, ремешок Golden, цепочка золотая, цвет — первый из списка (целый объект цвета).
+- **стр. 179** — добавлена ли сумка в корзину (для надписи и перехода).
+- **стр. 180** — что показать в увеличенном просмотре (`null` — ничего).
+- **стр. 181** — функция добавления сумки из корзины.
+- **стр. 182** — функция перехода.
 
 ```jsx
-158   const sizeInfo = SIZES.find((s) => s.id === config.size);
-159   const strapInfo = STRAPS.find((s) => s.id === config.strap);
-160   const totalPrice = sizeInfo.price + strapInfo.price;
-161
-162   // "Mixed" shows its chain color in the display label; other straps just use their label.
-163   const strapLabel = strapLabelFor(strapInfo, config.chainColor);
-164
-165   // Preview follows the active step: size photo on Size, strap photo otherwise.
-166   const onSizeStep = step === STEP.SIZE;
-167   const previewImage = onSizeStep ? sizeInfo.image : strapImageFor(strapInfo, config.size, config.chainColor);
-168   const previewLabel = onSizeStep ? `${sizeInfo.label} · ${sizeInfo.cm}` : `${sizeInfo.label} · ${strapLabel}`;
-169   const openPreviewLightbox = () => setLightbox({ image: previewImage, label: previewLabel });
+184   const sizeInfo = SIZES.find((s) => s.id === config.size);
+185   const strapInfo = STRAPS.find((s) => s.id === config.strap);
+186   const totalPrice = sizeInfo.price + strapInfo.price;
+187
+188   // "Mixed" shows its chain color in the display label; other straps just use their label.
+189   const strapLabel = strapLabelFor(strapInfo, config.chainColor);
+190
+191   // Preview follows the active step: size photo on Size, strap photo otherwise.
+192   const onSizeStep = step === STEP.SIZE;
+193   const previewImage = onSizeStep ? sizeInfo.image : strapImageFor(strapInfo, config.size, config.chainColor);
+194   const previewLabel = onSizeStep ? `${sizeInfo.label} · ${sizeInfo.cm}` : `${sizeInfo.label} · ${strapLabel}`;
+195   const openPreviewLightbox = () => setLightbox({ image: previewImage, label: previewLabel });
 ```
 
 Эти строки пересчитываются при каждой перерисовке (после любого выбора):
-- **стр. 158** — полные данные выбранного размера (`find` по коду).
-- **стр. 159** — полные данные выбранного ремешка.
-- **стр. 160** — **цена = размер + ремешок**. Цвет на цену не влияет.
-- **стр. 163** — название ремешка для показа.
-- **стр. 166** — на шаге размера ли мы.
-- **стр. 167** — большое фото: на шаге размера — фото размера, иначе — фото с ремешком.
-- **стр. 168** — подпись к фото.
-- **стр. 169** — **функция `openPreviewLightbox()`** — открыть фото крупно.
+- **стр. 184** — полные данные выбранного размера (`find` по коду).
+- **стр. 185** — полные данные выбранного ремешка.
+- **стр. 186** — **цена = размер + ремешок**. Цвет на цену не влияет.
+- **стр. 189** — название ремешка для показа.
+- **стр. 192** — на шаге размера ли мы.
+- **стр. 193** — большое фото: на шаге размера — фото размера, иначе — фото с ремешком.
+- **стр. 194** — подпись к фото.
+- **стр. 195** — **функция `openPreviewLightbox()`** — открыть фото крупно.
 
 ```jsx
-171   // Any change makes a new bag, so the Add to Cart button works again.
-172   function updateConfig(patch) {
-173     setConfig((c) => ({ ...c, ...patch }));
-174     setAddedToCart(false);
-175   }
+197   // Any change makes a new bag, so the Add to Cart button works again.
+198   function updateConfig(patch) {
+199     setConfig((c) => ({ ...c, ...patch }));
+200     setAddedToCart(false);
+201   }
 ```
 
-**Функция `updateConfig(patch)`** — изменить выбор. Вызывается кнопками размеров (стр. 269), ремешков (стр. 299), цепочки (стр. 337), цветов (стр. 360).
-- **стр. 173** — `setConfig` с функцией: получает прошлый выбор `c` и возвращает новый: все старые поля (`...c`) плюс изменённые (`...patch`). Например, `updateConfig({ size: 'large' })` меняет только размер.
-- **стр. 174** — после любого изменения кнопку «Add to Cart» снова можно нажать.
+**Функция `updateConfig(patch)`** — изменить выбор. Вызывается кнопками размеров (стр. 295), ремешков (стр. 325), цепочки (стр. 363), цветов (стр. 386).
+- **стр. 199** — `setConfig` с функцией: получает прошлый выбор `c` и возвращает новый: все старые поля (`...c`) плюс изменённые (`...patch`). Например, `updateConfig({ size: 'large' })` меняет только размер.
+- **стр. 200** — после любого изменения кнопку «Add to Cart» снова можно нажать.
 
 ```jsx
-177   // Drive the post-add redirect from an effect so the timer is cleared if the user leaves first.
-178   useEffect(() => {
-179     if (!addedToCart) return;
-180     const timer = setTimeout(() => navigate("/cart"), REDIRECT_DELAY_MS);
-181     return () => clearTimeout(timer);
-182   }, [addedToCart, navigate]);
+203   // Drive the post-add redirect from an effect so the timer is cleared if the user leaves first.
+204   useEffect(() => {
+205     if (!addedToCart) return;
+206     const timer = setTimeout(() => navigate("/cart"), REDIRECT_DELAY_MS);
+207     return () => clearTimeout(timer);
+208   }, [addedToCart, navigate]);
 ```
 
 **Эффект перехода в корзину.**
-- **стр. 179** — ещё не добавили — ничего не делаем.
-- **стр. 180** — `setTimeout(функция, мс)` — выполнить через 1,2 с: перейти на `/cart`.
-- **стр. 181** — очистка: если пользователь ушёл со страницы раньше, `clearTimeout` отменит переход.
-- **стр. 182** — срабатывает, когда меняется `addedToCart`.
+- **стр. 205** — ещё не добавили — ничего не делаем.
+- **стр. 206** — `setTimeout(функция, мс)` — выполнить через 1,2 с: перейти на `/cart`.
+- **стр. 207** — очистка: если пользователь ушёл со страницы раньше, `clearTimeout` отменит переход.
+- **стр. 208** — срабатывает, когда меняется `addedToCart`.
 
 ```jsx
-184   function handleAddToCart() {
-185     const name = `Custom Beaded Bag — ${config.color.name} / ${strapLabel}`;
-186     addCustomItem({
-187       id: `custom-${Date.now()}`,
-188       name,
-189       price: totalPrice,
-190       image: strapImageFor(strapInfo, config.size, config.chainColor), // real thumbnail, not ""
-191       category: "custom",
-192       quantity: 1,
-193       config: {
-194         // What the customer chose. The server counts the price from it.
-195         size: config.size,
-196         strap: config.strap,
-197         chainColor: strapInfo.id === "mixed" ? config.chainColor : null,
-198         color: config.color.id,
-199       },
-200     });
-201     setAddedToCart(true);
-202   }
+210   function handleAddToCart() {
+211     const name = `Custom Beaded Bag — ${config.color.name} / ${strapLabel}`;
+212     addCustomItem({
+213       id: `custom-${Date.now()}`,
+214       name,
+215       price: totalPrice,
+216       image: strapImageFor(strapInfo, config.size, config.chainColor), // real thumbnail, not ""
+217       category: "custom",
+218       quantity: 1,
+219       config: {
+220         // What the customer chose. The server counts the price from it.
+221         size: config.size,
+222         strap: config.strap,
+223         chainColor: strapInfo.id === "mixed" ? config.chainColor : null,
+224         color: config.color.id,
+225       },
+226     });
+227     setAddedToCart(true);
+228   }
 ```
 
-**Функция `handleAddToCart()`** — положить сумку в корзину. Вызывается кнопкой на последнем шаге (стр. 416).
-- **стр. 185** — название, например «Custom Beaded Bag — Black / Golden».
-- **стр. 186** — `addCustomItem` из `CartContext.jsx` (стр. 169).
-- **стр. 187** — id: `custom-` + текущее время в мс. По приставке `custom-` корзина и сервер понимают, что это сумка из конструктора.
-- **стр. 189** — цена для показа в корзине. При оплате сервер её **не берёт**, а считает сам.
-- **стр. 190** — картинка для корзины.
-- **стр. 193–199** — `config` — выбор покупателя кодами. Именно по `size` и `strap` сервер считает цену; цвет цепочки — только для Mixed.
-- **стр. 201** — отмечаем «добавлено» → эффект выше через 1,2 с откроет корзину.
+**Функция `handleAddToCart()`** — положить сумку в корзину. Вызывается кнопкой на последнем шаге (стр. 442).
+- **стр. 211** — название, например «Custom Beaded Bag — Black / Golden».
+- **стр. 212** — `addCustomItem` из `CartContext.jsx` (стр. 171).
+- **стр. 213** — id: `custom-` + текущее время в мс. По приставке `custom-` корзина и сервер понимают, что это сумка из конструктора.
+- **стр. 215** — цена для показа в корзине. При оплате сервер её **не берёт**, а считает сам.
+- **стр. 216** — картинка для корзины.
+- **стр. 219–225** — `config` — выбор покупателя кодами. Именно по `size` и `strap` сервер считает цену; цвет цепочки — только для Mixed.
+- **стр. 227** — отмечаем «добавлено» → эффект выше через 1,2 с откроет корзину.
 
 ```jsx
-204   const canGoNext = step < STEPS.length - 1;
-205   const canGoPrev = step > 0;
+230   const canGoNext = step < STEPS.length - 1;
+231   const canGoPrev = step > 0;
 ```
 
-- **стр. 204** — есть ли следующий шаг (шагов 3, последний номер 2).
-- **стр. 205** — есть ли предыдущий.
+- **стр. 230** — есть ли следующий шаг (шагов 3, последний номер 2).
+- **стр. 231** — есть ли предыдущий.
 
-**Разметка (стр. 207–523):**
-- **стр. 209–225** — чёрная шапка: заголовок «Custom Studio» и подпись, оба плавно появляются.
-- **стр. 227–250** — вкладки шагов: `STEPS.map((s, i) => ...)`. **стр. 232** `onClick={() => setStep(i)}` — перейти на шаг кликом. **стр. 236** — цвет текста: текущий — чёрный, пройденный — серый, будущий — светлый. **стр. 241–243** — под текущей вкладкой линия; `layoutId="stepIndicator"` — framer-motion плавно «переносит» её при смене шага. **стр. 244–246** — под пройденными — светлая линия.
-- **стр. 252** — две колонки: выбор слева, превью справа.
-- **стр. 254–396** — левая колонка. `AnimatePresence mode="wait"` + `key={step}` (стр. 256) — при смене шага старое содержимое уезжает вправо, новое выезжает слева.
-  - **стр. 262–284 — шаг 1, размер** (показывается, только если `step === STEP.SIZE`): заголовок шага; `SIZES.map(...)` — по кнопке на размер. **стр. 269** — клик: `updateConfig({ size: sz.id })`. **стр. 270** — `aria-pressed` — для экранных читалок: нажата ли кнопка. **стр. 271** — стиль через `optionClass`. **стр. 273–279** — название, размер в см, цена.
-  - **стр. 286–348 — шаг 2, ремешок**: `STRAPS.map(...)`. **стр. 291–293** — для каждого: выбран ли, его фото для текущего размера, подпись. **стр. 298–314** — кнопка выбора: клик — `updateConfig({ strap: st.id })`; внутри фото, название, доплата «+$30». **стр. 315–322** — маленькая кнопка-лупа поверх фото (видна при наведении): клик открывает фото крупно (`setLightbox`). **стр. 328–346** — только для Mixed: выбор цвета цепочки, `CHAIN_FINISHES.map(...)`, клик — `updateConfig({ chainColor })`.
-  - **стр. 350–394 — шаг 3, цвет**: `COLORS.map(...)` — сетка из 15 круглых кнопок. **стр. 360** — клик: `updateConfig({ color: c })` (весь объект цвета). **стр. 362–365** — фон — цвет-запаска; у выбранного толстая рамка. **стр. 367** — фото бусин; `loading="lazy"` — грузить, только когда видно. **стр. 368–370** — на выбранном — галочка. **стр. 374** — «Selected: название». **стр. 376–392** — итог заказа: размер, ремешок, цвет (массив пар `[название, значение]` → `.map` в строки) и итоговая цена.
-  - **стр. 398–424 — кнопки навигации**: **стр. 399–406** — «← Back», если есть предыдущий шаг: `setStep((s) => s - 1)`. **стр. 407–413** — «Next →», если есть следующий: `setStep((s) => s + 1)`. **стр. 414–423** — иначе (последний шаг) — кнопка «Add to Cart — $цена»: `onClick={handleAddToCart}`, неактивна после добавления, текст меняется на «Added ✓ Redirecting…».
-- **стр. 427–476** — правая колонка (на компьютере «прилипает» при прокрутке, `lg:sticky`):
-  - **стр. 429–447** — большое превью. `key={previewImage}` — при смене фото анимация появления. **стр. 437** — клик открывает фото крупно. **стр. 438–443** — то же с клавиатуры: Enter или пробел (`e.preventDefault()` — чтобы пробел не прокручивал страницу). **стр. 446** — компонент `BagPreview`.
-  - **стр. 450–463** — под превью: на шаге цвета — кружок с фото бусин и «цвет · ремешок»; на других шагах — название размера или ремешка.
-  - **стр. 465–475** — «Estimated price» и цена крупно; справа — размер, ремешок и «Made to order · 2–3 weeks» (постоянный текст).
-- **стр. 479–483** — блок с пояснением, что сумка делается на заказ.
-- **стр. 485–521 — увеличенный просмотр (лайтбокс)**: показывается, только если `lightbox` не `null`. **стр. 487–492** — тёмный фон на весь экран; клик по нему — `setLightbox(null)` (закрыть). **стр. 494–501** — кнопка ✕ (тоже закрывает). **стр. 502–518** — фото и подпись; **стр. 507** `onClick={(e) => e.stopPropagation()}` — клик по самой картинке не «всплывает» до фона и не закрывает просмотр.
+**Разметка (стр. 233–549):**
+- **стр. 235–251** — чёрная шапка: заголовок «Custom Studio» и подпись, оба плавно появляются.
+- **стр. 253–276** — вкладки шагов: `STEPS.map((s, i) => ...)`. **стр. 258** `onClick={() => setStep(i)}` — перейти на шаг кликом. **стр. 262** — цвет текста: текущий — чёрный, пройденный — серый, будущий — светлый. **стр. 267–269** — под текущей вкладкой линия; `layoutId="stepIndicator"` — framer-motion плавно «переносит» её при смене шага. **стр. 270–272** — под пройденными — светлая линия.
+- **стр. 278** — две колонки: выбор слева, превью справа.
+- **стр. 280–422** — левая колонка. `AnimatePresence mode="wait"` + `key={step}` (стр. 282) — при смене шага старое содержимое уезжает вправо, новое выезжает слева.
+  - **стр. 288–310 — шаг 1, размер** (показывается, только если `step === STEP.SIZE`): заголовок шага; `SIZES.map(...)` — по кнопке на размер. **стр. 295** — клик: `updateConfig({ size: sz.id })`. **стр. 296** — `aria-pressed` — для экранных читалок: нажата ли кнопка. **стр. 297** — стиль через `optionClass`. **стр. 299–305** — название, размер в см, цена.
+  - **стр. 312–374 — шаг 2, ремешок**: `STRAPS.map(...)`. **стр. 317–319** — для каждого: выбран ли, его фото для текущего размера, подпись. **стр. 324–340** — кнопка выбора: клик — `updateConfig({ strap: st.id })`; внутри фото, название, доплата «+$30». **стр. 341–348** — маленькая кнопка-лупа поверх фото (видна при наведении): клик открывает фото крупно (`setLightbox`). **стр. 354–372** — только для Mixed: выбор цвета цепочки, `CHAIN_FINISHES.map(...)`, клик — `updateConfig({ chainColor })`.
+  - **стр. 376–420 — шаг 3, цвет**: `COLORS.map(...)` — сетка из 15 круглых кнопок. **стр. 386** — клик: `updateConfig({ color: c })` (весь объект цвета). **стр. 388–391** — фон — цвет-запаска; у выбранного толстая рамка. **стр. 393** — фото бусин; `loading="lazy"` — грузить, только когда видно. **стр. 394–396** — на выбранном — галочка. **стр. 400** — «Selected: название». **стр. 402–418** — итог заказа: размер, ремешок, цвет (массив пар `[название, значение]` → `.map` в строки) и итоговая цена.
+  - **стр. 424–450 — кнопки навигации**: **стр. 425–432** — «← Back», если есть предыдущий шаг: `setStep((s) => s - 1)`. **стр. 433–439** — «Next →», если есть следующий: `setStep((s) => s + 1)`. **стр. 440–449** — иначе (последний шаг) — кнопка «Add to Cart — $цена»: `onClick={handleAddToCart}`, неактивна после добавления, текст меняется на «Added ✓ Redirecting…».
+- **стр. 453–502** — правая колонка (на компьютере «прилипает» при прокрутке, `lg:sticky`):
+  - **стр. 455–473** — большое превью. `key={previewImage}` — при смене фото анимация появления. **стр. 463** — клик открывает фото крупно. **стр. 464–469** — то же с клавиатуры: Enter или пробел (`e.preventDefault()` — чтобы пробел не прокручивал страницу). **стр. 472** — компонент `BagPreview`.
+  - **стр. 476–489** — под превью: на шаге цвета — кружок с фото бусин и «цвет · ремешок»; на других шагах — название размера или ремешка.
+  - **стр. 491–501** — «Estimated price» и цена крупно; справа — размер, ремешок и «Made to order · 2–3 weeks» (постоянный текст).
+- **стр. 505–509** — блок с пояснением, что сумка делается на заказ.
+- **стр. 511–547 — увеличенный просмотр (лайтбокс)**: показывается, только если `lightbox` не `null`. **стр. 513–518** — тёмный фон на весь экран; клик по нему — `setLightbox(null)` (закрыть). **стр. 520–527** — кнопка ✕ (тоже закрывает). **стр. 528–544** — фото и подпись; **стр. 533** `onClick={(e) => e.stopPropagation()}` — клик по самой картинке не «всплывает» до фона и не закрывает просмотр.
 
 ---
 
@@ -3990,7 +4130,7 @@ const имя = async (req, res) => {
 32   };
 ```
 
-**Функция `validate()`** — проверка формы в браузере (для удобства; сервер проверяет сам). Вызывается из `handleSubmit` (стр. 42).
+**Функция `validate()`** — проверка формы в браузере (для удобства; сервер проверяет сам). Вызывается из `handleSubmit` (стр. 52).
 - **стр. 23** — пустой объект ошибок.
 - **стр. 24** — имя пустое — ошибка.
 - **стр. 25** — почта пустая или не похожа на почту (`\S+@\S+\.\S+` — «не пробелы @ не пробелы . не пробелы»).
@@ -3998,82 +4138,94 @@ const имя = async (req, res) => {
 - **стр. 31** — возвращаем найденные ошибки.
 
 ```jsx
-34   const handleChange = (e) => {
-35     setForm({ ...form, [e.target.name]: e.target.value });
-36     if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: undefined });
-37   };
+34   // One handler for every field. The input's name ("email", "city"...)
+35   // says which field of the form to change.
+36   const handleChange = (e) => {
+37     const field = e.target.name;
+38     const value = e.target.value;
+39
+40     // Copy the form and change only this field.
+41     setForm({ ...form, [field]: value });
+42
+43     // The customer is fixing this field, so its red error goes away.
+44     if (errors[field]) {
+45       setErrors({ ...errors, [field]: undefined });
+46     }
+47   };
 ```
 
 **Функция `handleChange(e)`** — одна на все поля ввода. Вызывается при каждом нажатии клавиши в поле (`onChange`).
-- **стр. 35** — `e.target` — поле, в котором печатают; `name` — его атрибут `name` (например `"city"`), `value` — текст. `[e.target.name]` — имя ключа из переменной. Получается: копия формы, в которой поле `city` заменено.
-- **стр. 36** — если у этого поля была ошибка — убрать её (пользователь начал исправлять).
+- **стр. 37** — `e.target` — поле, в котором печатают; `name` — его атрибут `name`, например `"city"`.
+- **стр. 38** — `value` — текст, который сейчас в поле.
+- **стр. 41** — копия формы (`...form`), в которой заменено одно поле. `[field]` в квадратных скобках — имя ключа берётся из переменной: если `field = "city"`, это то же самое, что `city: value`.
+- **стр. 44–46** — если у этого поля была ошибка — убрать её (пользователь начал исправлять).
 
 ```jsx
-39   const handleSubmit = (e) => {
-40     e.preventDefault();
-41     setMessage("");
-42     const errs = validate();
-43     if (Object.keys(errs).length > 0) {
-44       setErrors(errs);
-45       return;
-46     }
-47
-48     setLoading(true);
-49
-50     // A guest may also order, so the token is sent only when there is one.
-51     const token = localStorage.getItem("token");
-52     const config = token ? authHeader(token) : {};
-53
-54     const body = {
-55       items,
-56       customer: { name: form.name, email: form.email, phone: form.phone },
-57       shipping: { address: form.address, city: form.city, country: form.country },
-58       deliveryMethod,
-59       notes: form.notes,
-60     };
-61
-62     api
-63       .post("/api/orders/checkout-session", body, config)
-64       .then((response) => {
-65         // The server opened a payment session and sent back its address.
-66         window.location.href = response.data.url;
-67       })
-68       .catch((error) => {
-69         console.log(error);
-70         setMessage(error.response?.data?.message || "Could not start checkout.");
-71         setLoading(false);
-72       });
-73   };
+49   const handleSubmit = (e) => {
+50     e.preventDefault();
+51     setMessage("");
+52     const errs = validate();
+53     if (Object.keys(errs).length > 0) {
+54       setErrors(errs);
+55       return;
+56     }
+57
+58     setLoading(true);
+59
+60     // A guest may also order, so the token is sent only when there is one.
+61     const token = localStorage.getItem("token");
+62     const config = token ? authHeader(token) : {};
+63
+64     const body = {
+65       items,
+66       customer: { name: form.name, email: form.email, phone: form.phone },
+67       shipping: { address: form.address, city: form.city, country: form.country },
+68       deliveryMethod,
+69       notes: form.notes,
+70     };
+71
+72     api
+73       .post("/api/orders/checkout-session", body, config)
+74       .then((response) => {
+75         // The server opened a payment session and sent back its address.
+76         window.location.href = response.data.url;
+77       })
+78       .catch((error) => {
+79         console.log(error);
+80         setMessage(error.response?.data?.message || "Could not start checkout.");
+81         setLoading(false);
+82       });
+83   };
 ```
 
-**Функция `handleSubmit(e)`** — кнопка Proceed to Payment. Вызывается формой (`onSubmit`, стр. 107).
-- **стр. 40** — `e.preventDefault()` — не дать браузеру перезагрузить страницу (стандартное поведение формы).
-- **стр. 41** — стереть прошлое сообщение.
-- **стр. 42–46** — проверяем; `Object.keys(errs)` — список имён полей с ошибками; если не пусто — показываем ошибки и выходим.
-- **стр. 48** — «идёт отправка» — кнопка станет неактивной.
-- **стр. 51–52** — если вошли — добавляем заголовок с токеном (сервер запишет id в заказ), если нет — пустые настройки (гость).
-- **стр. 54–60** — тело запроса: позиции корзины (как есть, с ценами — сервер их пересчитает), контакты, адрес, способ, комментарий.
-- **стр. 62–63** — `POST /api/orders/checkout-session` → на сервере `createCheckoutSession`.
-- **стр. 66** — сервер вернул адрес страницы оплаты Stripe. `window.location.href = ...` — **полный переход** браузера на другой сайт (Stripe). `navigate` здесь не подходит — он работает только внутри нашего сайта.
-- **стр. 68–72** — ошибка (нет в наличии, оплата не настроена) — показываем сообщение сервера и разблокируем кнопку.
+**Функция `handleSubmit(e)`** — кнопка Proceed to Payment. Вызывается формой (`onSubmit`, стр. 117).
+- **стр. 50** — `e.preventDefault()` — не дать браузеру перезагрузить страницу (стандартное поведение формы).
+- **стр. 51** — стереть прошлое сообщение.
+- **стр. 52–56** — проверяем; `Object.keys(errs)` — список имён полей с ошибками; если не пусто — показываем ошибки и выходим.
+- **стр. 58** — «идёт отправка» — кнопка станет неактивной.
+- **стр. 61–62** — если вошли — добавляем заголовок с токеном (сервер запишет id в заказ), если нет — пустые настройки (гость).
+- **стр. 64–70** — тело запроса: позиции корзины (как есть, с ценами — сервер их пересчитает), контакты, адрес, способ, комментарий.
+- **стр. 72–73** — `POST /api/orders/checkout-session` → на сервере `createCheckoutSession`.
+- **стр. 76** — сервер вернул адрес страницы оплаты Stripe. `window.location.href = ...` — **полный переход** браузера на другой сайт (Stripe). `navigate` здесь не подходит — он работает только внутри нашего сайта.
+- **стр. 78–82** — ошибка (нет в наличии, оплата не настроена) — показываем сообщение сервера и разблокируем кнопку.
 
-- **стр. 75–89** — **корзина пуста** — экран «Your cart is empty» со ссылкой на главную.
-- **стр. 91–94** — **функция `inputClass(field)`** — стиль поля: с ошибкой — красная линия, без — серая.
+- **стр. 85–99** — **корзина пуста** — экран «Your cart is empty» со ссылкой на главную.
+- **стр. 101–104** — **функция `inputClass(field)`** — стиль поля: с ошибкой — красная линия, без — серая.
 
-**Разметка (стр. 96–258):**
-- **стр. 99–104** — заголовок «Checkout».
-- **стр. 107** — `<form onSubmit={handleSubmit} noValidate>` — `noValidate` отключает встроенные сообщения браузера, используем свои.
-- **стр. 108–125** — «Contact»: поля `name`, `email`, `phone`. У каждого `name="..."` (по нему работает `handleChange`), `value={form....}`, `onChange={handleChange}`. Под полем — ошибка, если есть (`{errors.name && <p>...}`).
-- **стр. 127–151** — «Delivery Method»: две кнопки из массива `[{ id: "delivery" }, { id: "pickup" }]`. **стр. 139** — клик `setDeliveryMethod(opt.id)`. Выбранная — чёрная.
-- **стр. 153–173** — «Shipping Address» — только при доставке (`deliveryMethod === "delivery" &&`): поля `address`, `city`, `country` с ошибками.
-- **стр. 175–187** — «Notes» — многострочное поле `textarea`.
-- **стр. 189–191** — сообщение сервера красным.
-- **стр. 193–199** — кнопка отправки: неактивна во время отправки; текст «Redirecting to payment…» или «Proceed to Payment».
-- **стр. 202–254** — справа «Your Order»: `items.map(...)` — фото, название, количество, сумма по позиции; ниже Subtotal, Shipping «Free», Total — `getTotalPrice()`; ссылка «← Edit cart» на `/cart`.
+**Разметка (стр. 106–268):**
+- **стр. 109–114** — заголовок «Checkout».
+- **стр. 117** — `<form onSubmit={handleSubmit} noValidate>` — `noValidate` отключает встроенные сообщения браузера, используем свои.
+- **стр. 118–135** — «Contact»: поля `name`, `email`, `phone`. У каждого `name="..."` (по нему работает `handleChange`), `value={form....}`, `onChange={handleChange}`. Под полем — ошибка, если есть (`{errors.name && <p>...}`).
+- **стр. 137–161** — «Delivery Method»: две кнопки из массива `[{ id: "delivery" }, { id: "pickup" }]`. **стр. 149** — клик `setDeliveryMethod(opt.id)`. Выбранная — чёрная.
+- **стр. 163–183** — «Shipping Address» — только при доставке (`deliveryMethod === "delivery" &&`): поля `address`, `city`, `country` с ошибками.
+- **стр. 185–197** — «Notes» — многострочное поле `textarea`.
+- **стр. 199–201** — сообщение сервера красным.
+- **стр. 203–209** — кнопка отправки: неактивна во время отправки; текст «Redirecting to payment…» или «Proceed to Payment».
+- **стр. 212–264** — справа «Your Order»: `items.map(...)` — фото, название, количество, сумма по позиции; ниже Subtotal, Shipping «Free», Total — `getTotalPrice()`; ссылка «← Edit cart» на `/cart`.
 
 ## 14.3 front/src/pages/order/OrderSuccessPage.jsx — «Спасибо за заказ»
 
-**Кто подключает:** `App.jsx` (адрес `/order-success`). Сюда **Stripe** возвращает покупателя после оплаты: `/order-success?session_id=cs_...` (адрес задан в `OrderController.js`, стр. 159).
+**Кто подключает:** `App.jsx` (адрес `/order-success`). Сюда **Stripe** возвращает покупателя после оплаты: `/order-success?session_id=cs_...` (адрес задан в `OrderController.js`, стр. 192).
 **Что подключает:** `useEffect`, `useState` (стр. 1); `Link`, `useSearchParams` (стр. 2); иконку `CheckCircle` (стр. 3); `useCart` (стр. 4); `api` (стр. 5).
 **Обращается к серверу:** `GET /api/orders/by-session/:sessionId` → `getOrderBySession`; через `clearCart` — `DELETE /api/cart`.
 
@@ -4719,6 +4871,6 @@ const имя = async (req, res) => {
 | `Header.css` | `front/src/shared/ui/` | нигде не подключается, шапка оформлена Tailwind |
 | `react-image-magnifier-lens` | `front/package.json` | установлена, в коде не используется |
 | `express-mongo-sanitize`, `xss-clean` | `back/package.json` | установлены, в `index.js` не подключены |
-| `API` | `front/src/api.jsx`, стр. 14 | экспортируется, нигде не импортируется |
+| `API` | `front/src/api.jsx`, стр. 18 | экспортируется, нигде не импортируется |
 | `GET /api/orders/:id` | `ordersRoute.js`, стр. 24 | адрес работает, но ни одна страница его не вызывает |
 | поле `avatar` у пользователя | `userModel.js`, стр. 21 | сохраняется и отдаётся, но на сайте не показывается |

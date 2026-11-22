@@ -5,26 +5,64 @@ const Product = require('../models/productModel.js');
 // The form sends color_palette / details / style as one string
 // ("Pink, White"), so we turn it back into an array before saving.
 const toArray = (value) => {
-  if (Array.isArray(value)) return value;
-  if (typeof value !== 'string') return [];
-  return value.split(',').map((item) => item.trim()).filter(Boolean);
+  // Already an array: nothing to do.
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  // Not text either (for example undefined): an empty list.
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  // "Pink, White ," -> ["Pink", " White ", ""]
+  const parts = value.split(',');
+  // -> ["Pink", "White", ""]
+  const trimmed = parts.map((item) => item.trim());
+  // -> ["Pink", "White"]  (empty strings are dropped)
+  return trimmed.filter(Boolean);
 };
 
 // The stock field arrives from the form as text. null means the manager
 // left it empty, so this product is not stock tracked.
 const parseStock = (value) => {
-  if (value === undefined || value === null || String(value).trim() === '') return null;
+  // Empty field: stock is not tracked for this product
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return null;
+  }
+
   const number = Math.floor(Number(value));
-  return Number.isFinite(number) ? Math.max(0, number) : null;
+
+  // Not a number (e.g. "abc"): also not tracked
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  // Stock can't be negative
+  if (number < 0) {
+    return 0;
+  }
+
+  return number;
 };
 
 // Where the uploaded picture sits, for example "uploads/pink-123.jpg".
-const buildFilePath = (file) => path.join('uploads', file.filename).replace(/\\/g, '/');
+const buildFilePath = (file) => {
+  // On Windows path.join gives "uploads\pink-123.jpg" (backslash).
+  const filePath = path.join('uploads', file.filename);
+  // A web address needs "/", so every "\" is replaced with "/".
+  return filePath.replace(/\\/g, '/');
+};
 
 // Deletes an old picture from the disk after the product was replaced or removed.
 const removeImageFile = (fileName) => {
-  if (!fileName) return;
+  if (!fileName) {
+    return;
+  }
+
   const fullPath = path.join(__dirname, '..', fileName);
+
+  // If the file is already gone, there is nothing to do, so the error is ignored.
   fs.promises.unlink(fullPath).catch(() => {});
 };
 
