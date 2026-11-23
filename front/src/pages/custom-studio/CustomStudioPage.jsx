@@ -200,7 +200,7 @@ const CustomStudioPage = () => {
     setAddedToCart(false);
   }
 
-  // Drive the post-add redirect from an effect so the timer is cleared if the user leaves first.
+  // Drive the post add redirect from an effect so the timer is cleared if the user leaves first.
   useEffect(() => {
     if (!addedToCart) return;
     const timer = setTimeout(() => navigate("/cart"), REDIRECT_DELAY_MS);

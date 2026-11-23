@@ -387,15 +387,42 @@ const getStats = async (req, res) => {
 // All orders for the manager, with a status filter and a search box
 const getAllOrders = async (req, res) => {
   try {
-    const { status, search } = req.query;
+    // From the address: /api/orders?status=paid&search=dana
+    const status = req.query.status;
+    const search = req.query.search;
+
+    // The filter for MongoDB. Empty {} means "all orders".
     const query = {};
-    if (status && status !== 'all') query.status = status;
-    if (search) {
-      const rx = new RegExp(String(search).trim(), 'i');
-      query.$or = [{ orderNumber: rx }, { 'customer.name': rx }, { 'customer.email': rx }];
+
+    // Status filter: "all" means no filter
+    if (status && status !== 'all') {
+      query.status = status;
     }
-    const orders = await Order.find(query).sort({ createdAt: -1 }).limit(200);
-    res.status(200).json({ data: orders });
+
+    // Take the orders from the database, newest first (-1)
+    const allOrders = await Order.find(query).sort({ createdAt: -1 });
+
+    // No search text: send them all (at most 200)
+    if (!search) {
+      return res.status(200).json({ data: allOrders.slice(0, 200) });
+    }
+
+    // Search text in small letters: "Dana" -> "dana"
+    const text = String(search).trim().toLowerCase();
+
+    // Keep only the orders where the text is in the number, the name or the email
+    const found = [];
+    for (const order of allOrders) {
+      const number = order.orderNumber.toLowerCase();
+      const name = order.customer.name.toLowerCase();
+      const email = order.customer.email.toLowerCase();
+
+      if (number.includes(text) || name.includes(text) || email.includes(text)) {
+        found.push(order);
+      }
+    }
+
+    res.status(200).json({ data: found.slice(0, 200) });
   } catch (error) {
     console.log(error.message);
     res.status(500).send({ message: error.message });
