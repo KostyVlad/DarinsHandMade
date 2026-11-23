@@ -2716,7 +2716,7 @@ const имя = async (req, res) => {
 335 const PAID_STATUSES = ['paid', 'in_production', 'shipped', 'completed'];
 ```
 
-- **стр. 334** — все разрешённые статусы. Используется в `updateOrderStatus` (стр. 421): менеджер не может поставить статус, которого нет в списке.
+- **стр. 334** — все разрешённые статусы. Используется в `updateOrderStatus` (стр. 448): менеджер не может поставить статус, которого нет в списке.
 - **стр. 335** — статусы, в которых заказ уже **оплачен**. Используется в статистике (стр. 341): неоплаченные (`pending`) и отменённые в выручку не попадают.
 
 ### Функция `getStats` — статистика продаж (стр. 338–385)
@@ -2800,126 +2800,173 @@ const имя = async (req, res) => {
   - **стр. 376** — `avgOrder` — средний чек: выручка / количество. Тернарный оператор защищает от деления на ноль: заказов нет — 0.
 - **стр. 381–384** — ошибка — 500.
 
-### Функция `getAllOrders` — список заказов (стр. 388–403)
+### Функция `getAllOrders` — список заказов (стр. 388–430)
 
 ```js
 387 // All orders for the manager, with a status filter and a search box
 388 const getAllOrders = async (req, res) => {
 389   try {
-390     const { status, search } = req.query;
-391     const query = {};
-392     if (status && status !== 'all') query.status = status;
-393     if (search) {
-394       const rx = new RegExp(String(search).trim(), 'i');
-395       query.$or = [{ orderNumber: rx }, { 'customer.name': rx }, { 'customer.email': rx }];
-396     }
-397     const orders = await Order.find(query).sort({ createdAt: -1 }).limit(200);
-398     res.status(200).json({ data: orders });
-399   } catch (error) {
-400     console.log(error.message);
-401     res.status(500).send({ message: error.message });
-402   }
-403 };
+390     // From the address: /api/orders?status=paid&search=dana
+391     const status = req.query.status;
+392     const search = req.query.search;
+393
+394     // The filter for MongoDB. Empty {} means "all orders".
+395     const query = {};
+396
+397     // Status filter: "all" means no filter
+398     if (status && status !== 'all') {
+399       query.status = status;
+400     }
+401
+402     // Take the orders from the database, newest first (-1)
+403     const allOrders = await Order.find(query).sort({ createdAt: -1 });
+404
+405     // No search text: send them all (at most 200)
+406     if (!search) {
+407       return res.status(200).json({ data: allOrders.slice(0, 200) });
+408     }
+409
+410     // Search text in small letters: "Dana" -> "dana"
+411     const text = String(search).trim().toLowerCase();
+412
+413     // Keep only the orders where the text is in the number, the name or the email
+414     const found = [];
+415     for (const order of allOrders) {
+416       const number = order.orderNumber.toLowerCase();
+417       const name = order.customer.name.toLowerCase();
+418       const email = order.customer.email.toLowerCase();
+419
+420       if (number.includes(text) || name.includes(text) || email.includes(text)) {
+421         found.push(order);
+422       }
+423     }
+424
+425     res.status(200).json({ data: found.slice(0, 200) });
+426   } catch (error) {
+427     console.log(error.message);
+428     res.status(500).send({ message: error.message });
+429   }
+430 };
 ```
 
-- **Кто вызывает:** `GET /api/orders` (`ordersRoute.js` стр. 21). Фронт: `ManagerOrdersPage` (`load`), с параметрами `?status=paid&search=anna`.
-- **стр. 390** — статус и строка поиска из адреса (`req.query`).
-- **стр. 391** — условие поиска, пока пустое (`{}` — все заказы).
-- **стр. 392** — выбран статус и это не `'all'` — добавляем `query.status = 'paid'`.
-- **стр. 393–396** — есть строка поиска:
-  - **стр. 394** — `new RegExp(текст, 'i')` — регулярное выражение из текста; `'i'` — без учёта регистра. `/anna/i` найдёт `Anna`, `ANNA`, `Joanna`. `String(...).trim()` — строкой и без пробелов по краям;
-  - **стр. 395** — `$or` — «подходит хотя бы одно»: номер заказа, имя покупателя **или** его почта содержат этот текст. `'customer.name'` в кавычках — путь к вложенному полю.
-- **стр. 397** — `Order.find(query)` — найти по условию; `.sort({ createdAt: -1 })` — новые сверху; `.limit(200)` — не больше 200, чтобы страница не тормозила.
-- **стр. 398** — 200 и массив заказов.
-- **стр. 399–402** — ошибка — 500.
+- **Кто вызывает:** `GET /api/orders` (`ordersRoute.js` стр. 21). Фронт: `ManagerOrdersPage` (`load`), например с адресом `/api/orders?status=paid&search=dana`.
+- **стр. 390–392** — читаем две настройки из адреса. `req.query` — это всё, что стоит после `?` в адресе. Для `?status=paid&search=dana` получится `status = 'paid'`, `search = 'dana'`. Если параметра в адресе нет, переменная будет `undefined`.
+- **стр. 395** — `const query = {}` — условие для базы, пока пустое. `Order.find({})` с пустым условием отдаёт **все** заказы.
+- **стр. 398–400** — фильтр по статусу. Условие `status && status !== 'all'` читается так:
+  - `status` — статус вообще передан (не `undefined` и не пустая строка);
+  - `&&` — «И»;
+  - `status !== 'all'` — и это не «все» (в выпадающем списке менеджера есть пункт «All»).
+  - Оба условия верны — дописываем в условие поле: `query` было `{}`, станет `{ status: 'paid' }`. Тогда база отдаст только оплаченные.
+  - Пример: `status = 'all'` → второе условие ложно → фильтр не добавляем → все заказы.
+- **стр. 403** — `Order.find(query)` — берём из базы заказы по условию (все или только с нужным статусом). `.sort({ createdAt: -1 })` — сортировка по дате создания; `-1` значит «по убыванию», то есть **новые сверху**. `await` — ждём, пока база ответит. В `allOrders` лежит массив заказов.
+- **стр. 406–408** — поиска нет:
+  - `!search` — «НЕ search»: `true`, если в поиске ничего не написали (`undefined` или `''`);
+  - тогда сразу отдаём заказы. `allOrders.slice(0, 200)` — первые 200 штук (с 0-го по 199-й), чтобы страница не тормозила. Если заказов меньше 200, `slice` просто отдаст все;
+  - `return` останавливает функцию — код ниже (поиск) не нужен.
+- **стр. 411** — готовим текст поиска:
+  - `String(search)` — точно строка;
+  - `.trim()` — убрать пробелы по краям: `'  Dana '` → `'Dana'`;
+  - `.toLowerCase()` — маленькими буквами: `'Dana'` → `'dana'`. Так поиск не зависит от регистра.
+- **стр. 414** — `found` — пустой массив, сюда сложим подходящие заказы.
+- **стр. 415–423** — цикл `for (const order of allOrders)` — берём заказы по одному, на каждом шаге текущий лежит в `order`:
+  - **стр. 416–418** — номер заказа, имя и почту покупателя тоже переводим в маленькие буквы. Эти поля в модели обязательные (`required`), поэтому они всегда есть и `toLowerCase()` не упадёт;
+  - **стр. 420** — `includes(text)` — «есть ли этот текст **внутри** строки»: `'dana@mail.com'.includes('dana')` → `true`, `'avi@mail.com'.includes('dana')` → `false`. `||` — «ИЛИ»: хватает совпадения в любом из трёх полей;
+  - **стр. 421** — совпало — `found.push(order)` кладёт заказ в конец массива `found`.
+- **Пример.** Заказы: `DH-1` (Dana, d@x.com) и `DH-2` (Avi, avi@x.com).
+  - Поиск `AVI` → `text = 'avi'` → у DH-1 нет нигде, у DH-2 есть в имени → `found = [DH-2]`.
+  - Поиск `dh-` → есть в номере у обоих → `found = [DH-1, DH-2]`.
+  - Поиск `zzz` → нигде → `found = []`, страница покажет пустой список.
+- **стр. 425** — 200 и найденные заказы, тоже не больше 200.
+- **стр. 426–429** — ошибка (например, база недоступна) — 500.
+- **Почему поиск в коде, а не в базе.** Раньше здесь был оператор MongoDB `$or` с `new RegExp`. Его заменили простым циклом: так понятнее, и символы вроде `(` в поиске больше не ломают сервер. Цена — из базы читаются все заказы с выбранным статусом; для маленького магазина это нормально.
 
-### Функция `getOrderById` (стр. 406–415)
+### Функция `getOrderById` (стр. 433–442)
 
 ```js
-405 // Get one order
-406 const getOrderById = async (req, res) => {
-407   try {
-408     const order = await Order.findById(req.params.id);
-409     if (!order) return res.status(404).send({ message: 'Order not found' });
-410     res.status(200).json({ data: order });
-411   } catch (error) {
-412     console.log(error.message);
-413     res.status(500).send({ message: error.message });
-414   }
-415 };
+432 // Get one order
+433 const getOrderById = async (req, res) => {
+434   try {
+435     const order = await Order.findById(req.params.id);
+436     if (!order) return res.status(404).send({ message: 'Order not found' });
+437     res.status(200).json({ data: order });
+438   } catch (error) {
+439     console.log(error.message);
+440     res.status(500).send({ message: error.message });
+441   }
+442 };
 ```
 
 - **Кто вызывает:** `GET /api/orders/:id` (`ordersRoute.js` стр. 24). Со страниц сейчас не вызывается.
-- **стр. 408** — найти заказ по id из адреса.
-- **стр. 409** — не найден — 404 (в одну строку: `if (...) return ...;`).
-- **стр. 410** — 200 и заказ.
+- **стр. 435** — найти заказ по id из адреса.
+- **стр. 436** — не найден — 404 (в одну строку: `if (...) return ...;`).
+- **стр. 437** — 200 и заказ.
 
-### Функция `updateOrderStatus` (стр. 418–431)
+### Функция `updateOrderStatus` (стр. 445–458)
 
 ```js
-417 // Move an order to another status, for example paid -> shipped
-418 const updateOrderStatus = async (req, res) => {
-419   try {
-420     const { status } = req.body;
-421     if (!ALLOWED_STATUS.includes(status)) {
-422       return res.status(400).send({ message: 'Invalid status' });
-423     }
-424     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-425     if (!order) return res.status(404).send({ message: 'Order not found' });
-426     res.status(200).json({ data: order });
-427   } catch (error) {
-428     console.log(error.message);
-429     res.status(500).send({ message: error.message });
-430   }
-431 };
+444 // Move an order to another status, for example paid -> shipped
+445 const updateOrderStatus = async (req, res) => {
+446   try {
+447     const { status } = req.body;
+448     if (!ALLOWED_STATUS.includes(status)) {
+449       return res.status(400).send({ message: 'Invalid status' });
+450     }
+451     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+452     if (!order) return res.status(404).send({ message: 'Order not found' });
+453     res.status(200).json({ data: order });
+454   } catch (error) {
+455     console.log(error.message);
+456     res.status(500).send({ message: error.message });
+457   }
+458 };
 ```
 
 - **Кто вызывает:** `PATCH /api/orders/:id/status` (`ordersRoute.js` стр. 23). Фронт: `ManagerOrdersPage` (`changeStatus`) — выпадающий список статуса.
-- **стр. 420** — новый статус из тела запроса.
-- **стр. 421–423** — `ALLOWED_STATUS.includes(status)` — есть ли такой статус в списке (стр. 334). Нет — 400 «Invalid status».
-- **стр. 424** — `findByIdAndUpdate(id, { status }, { new: true })` — найти заказ и поставить статус; `new: true` — вернуть уже обновлённый.
-- **стр. 425** — нет такого заказа — 404.
-- **стр. 426** — 200 и обновлённый заказ (фронт заменит его в списке).
+- **стр. 447** — новый статус из тела запроса.
+- **стр. 448–450** — `ALLOWED_STATUS.includes(status)` — есть ли такой статус в списке (стр. 334). Нет — 400 «Invalid status».
+- **стр. 451** — `findByIdAndUpdate(id, { status }, { new: true })` — найти заказ и поставить статус; `new: true` — вернуть уже обновлённый.
+- **стр. 452** — нет такого заказа — 404.
+- **стр. 453** — 200 и обновлённый заказ (фронт заменит его в списке).
 
-### Функция `getOrderBySession` (стр. 434–450)
+### Функция `getOrderBySession` (стр. 461–477)
 
 ```js
-433 // For the Thank You page: a short summary of the order, found by the Stripe session
-434 const getOrderBySession = async (req, res) => {
-435   try {
-436     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });
-437     if (!order) return res.status(404).send({ message: 'Order not found' });
-438     res.status(200).json({
-439       data: {
-440         orderNumber: order.orderNumber,
-441         status: order.status,
-442         total: order.total,
-443         email: order.customer.email,
-444       }
-445     });
-446   } catch (error) {
-447     console.log(error.message);
-448     res.status(500).send({ message: error.message });
-449   }
-450 };
-451
-452 module.exports = {
-453   createCheckoutSession,
-454   stripeWebhook,
-455   getOrderBySession,
-456   getAllOrders,
-457   getOrderById,
-458   updateOrderStatus,
-459   getStats,
-460 };
+460 // For the Thank You page: a short summary of the order, found by the Stripe session
+461 const getOrderBySession = async (req, res) => {
+462   try {
+463     const order = await Order.findOne({ 'payment.sessionId': req.params.sessionId });
+464     if (!order) return res.status(404).send({ message: 'Order not found' });
+465     res.status(200).json({
+466       data: {
+467         orderNumber: order.orderNumber,
+468         status: order.status,
+469         total: order.total,
+470         email: order.customer.email,
+471       }
+472     });
+473   } catch (error) {
+474     console.log(error.message);
+475     res.status(500).send({ message: error.message });
+476   }
+477 };
+478
+479 module.exports = {
+480   createCheckoutSession,
+481   stripeWebhook,
+482   getOrderBySession,
+483   getAllOrders,
+484   getOrderById,
+485   updateOrderStatus,
+486   getStats,
+487 };
 ```
 
 - **Кто вызывает:** `GET /api/orders/by-session/:sessionId` (`ordersRoute.js` стр. 19). Фронт: `OrderSuccessPage` — Stripe вернул покупателя с `?session_id=...` в адресе.
-- **стр. 436** — ищем заказ, у которого `payment.sessionId` равен id из адреса (его записали на стр. 196). `'payment.sessionId'` в кавычках — путь к вложенному полю.
-- **стр. 437** — не найден — 404.
-- **стр. 438–445** — отдаём **не весь заказ**, а только номер, статус, сумму и почту: адрес открыт без входа, лишнего (адрес, телефон) показывать не нужно.
-- **стр. 446–449** — ошибка — 500.
-- **стр. 452–460** — отдаём наружу семь функций.
+- **стр. 463** — ищем заказ, у которого `payment.sessionId` равен id из адреса (его записали на стр. 196). `'payment.sessionId'` в кавычках — путь к вложенному полю.
+- **стр. 464** — не найден — 404.
+- **стр. 465–472** — отдаём **не весь заказ**, а только номер, статус, сумму и почту: адрес открыт без входа, лишнего (адрес, телефон) показывать не нужно.
+- **стр. 473–476** — ошибка — 500.
+- **стр. 479–487** — отдаём наружу семь функций.
 
 # Часть 7. Сервер: заполнение каталога и роль менеджера
 
@@ -4935,7 +4982,7 @@ const имя = async (req, res) => {
 200     setAddedToCart(false);
 201   }
 202
-203   // Drive the post-add redirect from an effect so the timer is cleared if the user leaves first.
+203   // Drive the post add redirect from an effect so the timer is cleared if the user leaves first.
 204   useEffect(() => {
 205     if (!addedToCart) return;
 206     const timer = setTimeout(() => navigate("/cart"), REDIRECT_DELAY_MS);
